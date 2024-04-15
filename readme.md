@@ -11,35 +11,40 @@ To run this project locally, follow these steps:
 ```bash
 git clone git@github.com:Sachit56/TVIS-backend.git
 
-2. Navigate into the directory:
 
-cd my_site
+## Project Structure
 
-3. Create a virtual environment (optional but recommended):
+- **my_site/**: Django project folder.
+- **tvis_app/**: Django app folder containing models, serializers, views, and API configurations.
 
-python -m venv venv
+## Setup
 
-4.Activate the virtual environment
+1. Install dependencies: `pip install django djangorestframework`.
+2. Create Django project and app: `django-admin startproject my_site && python manage.py startapp tvis_app`.
+3. Configure settings in `myproject/settings.py`.
+4. Create models, serializers, and views in `tvis_app/`.
+5. Run migrations: `python manage.py makemigrations && python manage.py migrate`.
+6. Start the development server: `python manage.py runserver`.
 
- -On Windows:
- venv\Scripts\activate
 
- -On Linux:
- source venv/bin/activate
+## Configure PostgreSQL Database for Django Project
 
-5.Install dependencies:
+In your Django project's `settings.py` file, configure the PostgreSQL database as follows:
 
-pip install -r requirements.txt
+```python
+# In your my_site/settings.py
 
-6.Apply database migrations:
-
-python manage.py migrate
-
-7.Run Server:
-
-python manage.py runserver
-
-You can access the website at http://127.0.0.1:8000/.
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'tvis',
+        'USER':'postgres',
+        'PASSWORD':'admin@123',
+        'HOST':'localhost',
+        'PORT':'5432'
+    }
+}
+```
 
 
 
