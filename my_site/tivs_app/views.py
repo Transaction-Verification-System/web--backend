@@ -16,7 +16,7 @@ class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self,request):
-        serializer = UserRegisterSerializer(request.data)
+        serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({'status':status.HTTP_201_CREATED,'serializer':serializer.data})
@@ -24,19 +24,22 @@ class RegisterView(APIView):
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = [SessionAuthentication]
 
     def post(self,request):
-        serializer = UserLoginSerializer(request.data)
+        serializer = UserLoginSerializer(data=request.data)
+        
 
         if serializer.is_valid():
             user = serializer.check(serializer.validated_data)
 
             if user:
                 login(request,user)
-                token,_ = Token.objects.get_or_create(user=user)
+                token, _ = Token.objects.get_or_create(user=user)
 
-                return Response({'user':user.username,'token':token.key},status=status.HTTP_200_OK)
-            return Response({'errors':'Invalid Credentials'},status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'user':user.user_id,'token':token.key},status=status.HTTP_200_OK)
+            else:
+                return Response({'errors':'Invalid Credentials'},status=status.HTTP_401_UNAUTHORIZED)
         return Response({'errors':serializer.errors},status=status.HTTP_400_BAD_REQUEST)
     
 
