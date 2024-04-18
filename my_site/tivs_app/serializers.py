@@ -25,21 +25,6 @@ class UserLoginSerializer(serializers.Serializer):
         if not user:
             raise ValidationError('User not found.')
         return user
-    # email = serializers.EmailField()
-    # password = serializers.CharField()
-
-    # def validate(self, attrs):
-    #     email = attrs.get('email')
-    #     password = attrs.get('password')
-
-    #     if email and password:
-    #         user = authenticate(email=email, password=password)
-    #         if not user:
-    #             raise ValidationError('Invalid email or password.')
-    #     else:
-    #         raise ValidationError('Email and password are required.')
-
-    #     return user
 
 
 class UserSerializer(serializers.ModelSerializer):
