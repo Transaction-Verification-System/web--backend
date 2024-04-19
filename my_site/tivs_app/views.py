@@ -70,6 +70,8 @@ class LogoutView(APIView):
     permission_classes=[permissions.IsAuthenticated]
     authentication_classes=[SessionAuthentication]
     def get(self,request):
+        token = Token.objects.get(user=request.user)
+        token.delete()
         logout(request)
 
         return Response({'status':status.HTTP_200_OK,'message':'Logged Out Successfully'})
