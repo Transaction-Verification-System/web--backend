@@ -69,7 +69,7 @@ class LoginView(APIView):
 class LogoutView(APIView):
     permission_classes=[permissions.IsAuthenticated]
     authentication_classes=[SessionAuthentication]
-    def get(self,request):
+    def post(self,request):
         token = Token.objects.get(user=request.user)
         token.delete()
         logout(request)
