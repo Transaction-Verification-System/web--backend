@@ -88,6 +88,7 @@ class UserView(APIView):
     
 
 
-
+def chat(request):
+    return render(request,'tivs_app/lobby.html')
 
 
