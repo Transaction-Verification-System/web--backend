@@ -12,6 +12,12 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import login,logout,authenticate
 from rest_framework.decorators import authentication_classes,api_view,permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken,AccessToken
+from rest_framework_simplejwt.exceptions import TokenError
+from django.conf import settings
+import jwt
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
+
 
 # Create your views here.
 
@@ -42,7 +48,7 @@ class RegisterView(APIView):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'status':status.HTTP_201_CREATED,'serializer':serializer.data})
+            return Response({'status':status.HTTP_201_CREATED,'message':'registered successfully'})
         return Response({'status':status.HTTP_400_BAD_REQUEST,'errors':serializer.errors})
 
 class LoginView(APIView):
@@ -57,10 +63,11 @@ class LoginView(APIView):
             user = serializer.check(serializer.validated_data)
 
             if user:
+                refresh = RefreshToken.for_user(user)
                 login(request,user)
                 token, _ = Token.objects.get_or_create(user=user)
 
-                return Response({'user':user.user_id,'token':token.key},status=status.HTTP_200_OK)
+                return Response({'refresh':str(refresh),'refresh-token':str(refresh.access_token),'api-token':token.key},status=status.HTTP_200_OK)
             else:
                 return Response({'errors':'Invalid Credentials'},status=status.HTTP_401_UNAUTHORIZED)
         return Response({'errors':serializer.errors},status=status.HTTP_400_BAD_REQUEST)
@@ -88,7 +95,5 @@ class UserView(APIView):
     
 
 
-def chat(request):
-    return render(request,'tivs_app/lobby.html')
 
 
