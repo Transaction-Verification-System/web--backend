@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>Let's chat!</h1>
+    <script type="text/javascript">
+        const apiToken = '8883a35716786a76830bdad36df6a8f4c331a609';
+
+        fetch('http://localhost:8000/verify/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Token ' + apiToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+        })
+        .catch(error => console.error('Error:', error));
+
+        let url = `ws://${window.location.host}/ws/chat/`;
+        const chatSocket = new WebSocket(url);
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            console.log('Data:', data);
+        };
+
+        chatSocket.onopen = function() {
+            console.log('WebSocket connection established');
+        };
+
+        chatSocket.onerror = function(error) {
+            console.error('WebSocket Error:', error);
+        };
+
+        chatSocket.onclose = function() {
+            console.log('WebSocket connection closed');
+        };
+    </script>
+</body>
+</html>

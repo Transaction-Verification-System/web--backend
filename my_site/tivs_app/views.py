@@ -33,8 +33,8 @@ def refreshToken(request):
     user = request.user
     try:
         token = Token.objects.get(user=user)
-        token.delete()  # Delete the existing token
-        new_token = Token.objects.create(user=user)  # Create a new token for the user
+        token.delete() 
+        new_token = Token.objects.create(user=user) 
         return Response({'token': new_token.key, 'business': user.is_business}, status=200)
     except Token.DoesNotExist:
         return Response({'error': 'Token not found'}, status=404)
@@ -97,13 +97,29 @@ class UserView(APIView):
         return Response({'user':serializer.data},status=status.HTTP_200_OK)     
     
 
-# views.py (continued)
-
 @api_view(['POST'])
 @authentication_classes((TokenAuthentication,))
 @permission_classes([IsAuthenticated])
 def verify_token(request):
-    return Response({'message': 'Data has been received!'}, status=200)
+    user = request.user
+    token_key = request.headers.get('Authorization').split()[1]
+
+    try:
+        token = Token.objects.get(key=token_key)
+        if token.user == user:
+            channel_layer = get_channel_layer()
+            if channel_layer is not None:
+                async_to_sync(channel_layer.group_send)(
+                    'chat_group', 
+                    {
+                        'type': 'chat_message',
+                        'message': 'API token detected, data ready!'
+                    }
+                )
+                return Response({'message': 'Token is valid, and data has been received!'}, status=200)
+        return Response({'detail': 'Invalid token.'}, status=401)
+    except Token.DoesNotExist:
+        return Response({'detail': 'Invalid token.'}, status=401)
 
 from django.shortcuts import render
 
