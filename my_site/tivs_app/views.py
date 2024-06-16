@@ -55,7 +55,6 @@ class RegisterView(APIView):
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
-    authentication_classes = [SessionAuthentication]
 
     def post(self,request):
         serializer = UserLoginSerializer(data=request.data)
@@ -70,7 +69,7 @@ class LoginView(APIView):
                 token, _ = Token.objects.get_or_create(user=user)
 
 
-                return Response({'refresh':str(refresh),'refresh-token':str(refresh.access_token),'api-token':token.key},status=status.HTTP_200_OK)
+                return Response({'access-token':str(refresh.access_token),'api-token':token.key},status=status.HTTP_200_OK)
             else:
                 return Response({'errors':'Invalid Credentials'},status=status.HTTP_401_UNAUTHORIZED)
         return Response({'errors':serializer.errors},status=status.HTTP_400_BAD_REQUEST)
@@ -78,7 +77,6 @@ class LoginView(APIView):
   
 class LogoutView(APIView):
     permission_classes=[permissions.IsAuthenticated]
-    authentication_classes=[SessionAuthentication]
     def post(self,request):
         token = Token.objects.get(user=request.user)
         token.delete()
@@ -90,7 +88,6 @@ class LogoutView(APIView):
 class UserView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
-    authentication_classes = [SessionAuthentication]
 
     def get(self,request):
         serializer = UserSerializer(request.user)
