@@ -50,8 +50,8 @@ class RegisterView(APIView):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'status':status.HTTP_201_CREATED,'message':'registered successfully'})
-        return Response({'status':status.HTTP_400_BAD_REQUEST,'errors':serializer.errors})
+            return Response({'status':status.HTTP_201_CREATED,'message':'registered successfully'},status=status.HTTP_201_CREATED)
+        return Response({'status':status.HTTP_400_BAD_REQUEST,'errors':serializer.errors},status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -82,7 +82,7 @@ class LogoutView(APIView):
         token.delete()
         logout(request)
 
-        return Response({'status':status.HTTP_200_OK,'message':'Logged Out Successfully'})
+        return Response({'status':status.HTTP_200_OK,'message':'Logged Out Successfully'},status=status.HTTP_200_OK)
 
     
 class UserView(APIView):
