@@ -94,35 +94,18 @@ class UserView(APIView):
         return Response({'user':serializer.data},status=status.HTTP_200_OK)     
     
 
-@api_view(['POST'])
-@authentication_classes((TokenAuthentication,))
-@permission_classes([IsAuthenticated])
-def verify_token(request):
-    user = request.user
-    token_key = request.headers.get('Authorization').split()[1]
 
-    try:
-        token = Token.objects.get(key=token_key)
-        if token.user == user:
-            channel_layer = get_channel_layer()
-            if channel_layer is not None:
-                async_to_sync(channel_layer.group_send)(
-                    'chat_group', 
-                    {
-                        'type': 'chat_message',
-                        'message': 'API token detected, data ready!'
-                    }
-                )
-                return Response({'message': 'Token is valid, and data has been received!'}, status=200)
-        return Response({'detail': 'Invalid token.'}, status=401)
-    except Token.DoesNotExist:
-        return Response({'detail': 'Invalid token.'}, status=401)
 
 from django.shortcuts import render
 
 def chat_view(request):
     return render(request, 'tivs_app/index.html')
 
+class verify_token(APIView):
+    permission_classes = [IsAuthenticated]
 
-
-
+    def get(self, request):
+        if getattr(request, 'is_token_valid', False):
+            return Response({'message': 'Token is valid, and data has been received!'}, status=200)
+        else:
+            return Response({'detail': 'Invalid token.'}, status=401)

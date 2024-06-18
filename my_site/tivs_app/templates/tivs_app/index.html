@@ -8,19 +8,16 @@
 <body>
     <h1>Let's chat!</h1>
     <script type="text/javascript">
-        const apiToken = '8883a35716786a76830bdad36df6a8f4c331a609';
+        const jwtToken = 'dada9c147c65c8ac0ca6e8f614b49ee0da2c9f72';
 
-        fetch('http://localhost:8000/verify/', {
-            method: 'POST',
+        fetch('http://127.0.0.1:8000/verify', {
+            method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Token ' + apiToken
+                'Authorization': 'Bearer ' + jwtToken
             }
         })
         .then(response => response.json())
-        .then(data => {
-            console.log(data);
-        })
+        .then(data => console.log('Response:', data))
         .catch(error => console.error('Error:', error));
 
         let url = `ws://${window.location.host}/ws/chat/`;
