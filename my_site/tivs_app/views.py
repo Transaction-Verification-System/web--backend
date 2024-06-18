@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.views import APIView
 from rest_framework import status,permissions
-from rest_framework.authentication import SessionAuthentication
+from rest_framework.authentication import SessionAuthentication,BasicAuthentication
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login,logout,authenticate
 from rest_framework.decorators import authentication_classes,api_view,permission_classes
@@ -19,8 +19,8 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import jwt
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
-
-
+# from .middleware import token_required
+from rest_framework.authentication import SessionAuthentication 
 # Create your views here.
 
 def get_csrf_token(request):
@@ -35,7 +35,6 @@ def refreshToken(request):
         token = Token.objects.get(user=user)
         token.delete() 
         new_token = Token.objects.create(user=user) 
-        return Response({'token': new_token.key, 'business': user.is_business}, status=200)
     except Token.DoesNotExist:
         return Response({'error': 'Token not found'}, status=404)
     except Exception as e:
@@ -84,28 +83,25 @@ class LogoutView(APIView):
 
         return Response({'status':status.HTTP_200_OK,'message':'Logged Out Successfully'},status=status.HTTP_200_OK)
 
-    
+# @authentication_classes((TokenAuthentication,))
 class UserView(APIView):
-
     permission_classes = [permissions.IsAuthenticated]
+    authentication_classes=[TokenAuthentication]
 
-    def get(self,request):
-        serializer = UserSerializer(request.user)
-        return Response({'user':serializer.data},status=status.HTTP_200_OK)     
     
-
-
-
-from django.shortcuts import render
-
-def chat_view(request):
-    return render(request, 'tivs_app/index.html')
-
-class verify_token(APIView):
-    permission_classes = [IsAuthenticated]
-
     def get(self, request):
-        if getattr(request, 'is_token_valid', False):
-            return Response({'message': 'Token is valid, and data has been received!'}, status=200)
-        else:
-            return Response({'detail': 'Invalid token.'}, status=401)
+        # serializer = UserSerializer(request.user)
+        return Response({'message': 'hello'}, status=status.HTTP_200_OK)
+
+
+# @authentication_classes((TokenAuthentication,))
+class TransactionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes=[TokenAuthentication]
+
+
+    # @token_required
+    def get(self,request):
+        return Response({'message':'Hello bb'})
+
+

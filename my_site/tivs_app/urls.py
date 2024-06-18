@@ -6,6 +6,5 @@ urlpatterns = [
     path('login/',LoginView.as_view(),name='login'),
     path('logout/',LogoutView.as_view(),name='logout'),
     path('home/',UserView.as_view(),name='session'),
-    path('verify/',verify_token.as_view(),name='verify'),
-    path('chat/',chat_view,name='chat')
+    path('transaction/',TransactionView.as_view(),name='transaction')
 ]
