@@ -31,7 +31,7 @@ class AppUserManager(BaseUserManager):
         return user
     
 class AppUser(AbstractBaseUser,PermissionsMixin):
-    user_id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     email = models.EmailField(max_length=254,unique=True)
     username = models.CharField(max_length=50)
     is_active = models.BooleanField(default=True)

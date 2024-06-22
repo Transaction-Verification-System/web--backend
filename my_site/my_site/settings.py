@@ -104,6 +104,7 @@ ASGI_APPLICATION = 'my_site.asgi.application'
 
 import dj_database_url
 
+
 DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv('URL')
