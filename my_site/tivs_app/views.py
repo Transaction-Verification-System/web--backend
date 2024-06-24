@@ -18,8 +18,8 @@ from django.conf import settings
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import jwt
+from .permissions import AuthTokenPermission,JWTTokenPermission
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
-# from .middleware import token_required
 from rest_framework.authentication import SessionAuthentication 
 # Create your views here.
 
@@ -83,25 +83,18 @@ class LogoutView(APIView):
 
         return Response({'status':status.HTTP_200_OK,'message':'Logged Out Successfully'},status=status.HTTP_200_OK)
 
-# @authentication_classes((TokenAuthentication,))
 class UserView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    authentication_classes=[TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated,AuthTokenPermission]
 
-    
     def get(self, request):
-        # serializer = UserSerializer(request.user)
-        return Response({'message': 'hello'}, status=status.HTTP_200_OK)
+        serializer = UserSerializer(request.user)
+        return Response({'user': serializer.data}, status=status.HTTP_200_OK)
 
 
-# @authentication_classes((TokenAuthentication,))
 class TransactionView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    authentication_classes=[TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated,JWTTokenPermission]
 
-
-    # @token_required
     def get(self,request):
-        return Response({'message':'Hello bb'})
+        return Response({'message':'Transaction View'})
 
 
