@@ -1,16 +1,6 @@
-# My Site
+# TVIS Backend
 
-Welcome to My Site! This is a Django project designed to [briefly describe your project's purpose or functionality].
-
-## Installation
-
-To run this project locally, follow these steps:
-
-1. Clone this repository to your local machine:
-
-```bash
-git clone git@github.com:Sachit56/TVIS-backend.git
-
+This repository contains the backend code for the TVIS project. It is built using Django and Django REST Framework.
 
 ## Project Structure
 
@@ -19,34 +9,45 @@ git clone git@github.com:Sachit56/TVIS-backend.git
 
 ## Setup
 
-1. Install dependencies: `pip install django djangorestframework`.
-2. Create Django project and app: `django-admin startproject my_site && python manage.py startapp tvis_app`.
-3. Configure settings in `myproject/settings.py`.
-4. Create models, serializers, and views in `tvis_app/`.
-5. Run migrations: `python manage.py makemigrations && python manage.py migrate`.
-6. Start the development server: `python manage.py runserver`.
+1. **Clone the Repository**: 
 
+2. **Install Dependencies**: 
 
-## Configure PostgreSQL Database for Django Project
+3. **Create Django Project and App**: 
 
-In your Django project's `settings.py` file, configure the PostgreSQL database as follows:
+4. **Configuration**:
+- Configure settings in `my_site/settings.py`.
+- Configure PostgreSQL database settings as shown below:
 
-```python
-# In your my_site/settings.py
+ ```python
+ # In your my_site/settings.py
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tvis',
-        'USER':'postgres',
-        'PASSWORD':'admin@123',
-        'HOST':'localhost',
-        'PORT':'5432'
-    }
-}
-```
+ DATABASES = {
+     'default': {
+         'ENGINE': 'django.db.backends.postgresql',
+         'NAME': 'tvis',
+         'USER':'postgres',
+         'PASSWORD':'admin@123',
+         'HOST':'localhost',
+         'PORT':'5432'
+     }
+ }
+ ```
 
+5. **Create Models, Serializers, and Views**: 
+- Create models, serializers, and views in `tvis_app/`.
 
+6. **Run Migrations**: 
+
+7. **Start the Development Server**: 
+
+## Contributing
+
+Feel free to contribute to this project by forking the repository and sending pull requests. Please ensure that any changes are appropriately tested and documented.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 
 
