@@ -104,7 +104,7 @@ class TransactionView(APIView):
 
     def get(self,request):
         permission = JWTTokenPermission()
-        action = f'Transaction view has been accessed using auth token.'
+        action = f'Transaction view has been accessed using jwt token.'
         user = request.user.username
         permission.get_notify(action,user, 'auth_group')
         return Response({'message':'Transaction View'})
