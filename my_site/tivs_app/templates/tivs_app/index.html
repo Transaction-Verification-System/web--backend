@@ -1,43 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Test</title>
+    <title>WebSocket Example</title>
 </head>
 <body>
-    <h1>Let's chat!</h1>
-    <script type="text/javascript">
-        const jwtToken = 'dada9c147c65c8ac0ca6e8f614b49ee0da2c9f72';
+    <h1>WebSocket Test</h1>
+    <div id="messages"></div>
+    <script>
+        // Connect to the WebSocket server
+        const ws = new WebSocket('ws://127.0.0.1:8000/ws/chat/');
 
-        fetch('http://127.0.0.1:8000/verify', {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + jwtToken
-            }
-        })
-        .then(response => response.json())
-        .then(data => console.log('Response:', data))
-        .catch(error => console.error('Error:', error));
-
-        let url = `ws://${window.location.host}/ws/chat/`;
-        const chatSocket = new WebSocket(url);
-
-        chatSocket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            console.log('Data:', data);
+        // Handle incoming messages
+        ws.onmessage = function(event) {
+            const messageDiv = document.getElementById('messages');
+            const message = JSON.parse(event.data).message;
+            const newMessage = document.createElement('div');
+            newMessage.innerText = message;
+            messageDiv.appendChild(newMessage);
+            console.log(message)
         };
 
-        chatSocket.onopen = function() {
-            console.log('WebSocket connection established');
+        // Handle WebSocket connection opening
+        ws.onopen = function(event) {
+            console.log('WebSocket is connected.');
         };
 
-        chatSocket.onerror = function(error) {
-            console.error('WebSocket Error:', error);
+        // Handle WebSocket connection closing
+        ws.onclose = function(event) {
+            console.log('WebSocket is closed.');
         };
 
-        chatSocket.onclose = function() {
-            console.log('WebSocket connection closed');
+        // Handle WebSocket errors
+        ws.onerror = function(error) {
+            console.error('WebSocket error observed:', error);
         };
     </script>
 </body>

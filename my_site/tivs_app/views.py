@@ -21,6 +21,7 @@ import jwt
 from .permissions import AuthTokenPermission,JWTTokenPermission
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from rest_framework.authentication import SessionAuthentication 
+from rest_framework import status,permissions
 # Create your views here.
 
 def get_csrf_token(request):
@@ -82,11 +83,18 @@ class LogoutView(APIView):
         logout(request)
 
         return Response({'status':status.HTTP_200_OK,'message':'Logged Out Successfully'},status=status.HTTP_200_OK)
+    
+def chat_view(request):
+    return render(request, 'tivs_app/index.html')    
 
 class UserView(APIView):
     permission_classes = [permissions.IsAuthenticated,AuthTokenPermission]
 
     def get(self, request):
+        permission = AuthTokenPermission()
+        action = f'User view has been accessed using auth token.'
+        user = request.user.username
+        permission.get_notify(action,user, 'auth_group')
         serializer = UserSerializer(request.user)
         return Response({'user': serializer.data}, status=status.HTTP_200_OK)
 
@@ -95,6 +103,10 @@ class TransactionView(APIView):
     permission_classes = [permissions.IsAuthenticated,JWTTokenPermission]
 
     def get(self,request):
+        permission = JWTTokenPermission()
+        action = f'Transaction view has been accessed using auth token.'
+        user = request.user.username
+        permission.get_notify(action,user, 'auth_group')
         return Response({'message':'Transaction View'})
 
 
