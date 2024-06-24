@@ -15,7 +15,6 @@ def ready_message(action,user):
     }
 
 
-
 class AuthTokenPermission(BasePermission):
     def has_permission(self, request, view):
         auth_token = request.headers.get('Authorization')
@@ -24,8 +23,6 @@ class AuthTokenPermission(BasePermission):
         if auth_token==token.key:
             return True
         else:    
-            # self.get_notify(f'User {request.user.username} accessed the view with wrong auth token.')
-
             return False
     def get_notify(self,action,user,group_name):
         message = ready_message(action,user)
@@ -46,8 +43,6 @@ class JWTTokenPermission(BasePermission):
                 jwt.decode(jwt_token, settings.SECRET_KEY, algorithms=['HS256'])
                 return True
             except (ExpiredSignatureError, InvalidTokenError):
-                # self.get_notify(f'User {request.user.username} accessed the view with wrong JWT token.')
-
                 return False
         return False
     
