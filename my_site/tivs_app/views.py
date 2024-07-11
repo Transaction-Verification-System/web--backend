@@ -1,10 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.http import JsonResponse
 from .serializers import *
 from .models import *
 from django.middleware.csrf import get_token
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from rest_framework.views import APIView
 from rest_framework import status,permissions
 from rest_framework.authentication import SessionAuthentication,BasicAuthentication
@@ -22,6 +24,12 @@ from .permissions import AuthTokenPermission,JWTTokenPermission
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from rest_framework.authentication import SessionAuthentication 
 from rest_framework import status,permissions
+from .tasks import chain_task,chain_task2
+from django.views.decorators.csrf import csrf_exempt,csrf_protect
+from django.utils.decorators import method_decorator
+
+
+
 # Create your views here.
 
 def get_csrf_token(request):
@@ -89,8 +97,28 @@ def chat_view(request):
 
 class UserView(APIView):
     permission_classes = [permissions.IsAuthenticated,AuthTokenPermission]
+    @method_decorator(csrf_exempt)
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({'error': 'User is not authenticated'}, status=status.HTTP_403_FORBIDDEN)
+
+        num1 = request.POST.get('number1')
+        num2 = request.POST.get('number2')
+
+        if num1 is None or num2 is None:
+            return Response({'error': 'Missing parameters'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            num1 = int(num1)
+            num2 = int(num2)
+        except ValueError:
+            return Response({'error': 'Invalid number format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = num1 + num2
+        return Response({'result': result}, status=status.HTTP_200_OK)
 
     def get(self, request):
+        print('Hello')
         permission = AuthTokenPermission()
         action = f'User view has been accessed using auth token.'
         user = request.user.username
@@ -101,6 +129,29 @@ class UserView(APIView):
 
 class TransactionView(APIView):
     permission_classes = [permissions.IsAuthenticated,JWTTokenPermission]
+    print('T')
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(TransactionView, self).dispatch(*args, **kwargs)
+    
+    def post(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            data_list = request.data
+            print('Data List',data_list)
+            try:
+                # num1 = int(data.get('number1'))
+                # num2 = int(data.get('number2'))
+                first_data = data_list[0]
+                chain_task.apply_async((first_data,0, data_list), queue='queue_1')
+                return redirect('success')
+            except KeyError as e:
+                return Response({'error': f'Missing parameter: {str(e)}'}, status=400)
+            except ValueError:
+                return Response({'error': 'Invalid number format'}, status=400)
+
+        return render(request, 'tivs_app/index.html')
+
+      
 
     def get(self,request):
         permission = JWTTokenPermission()
@@ -108,5 +159,44 @@ class TransactionView(APIView):
         user = request.user.username
         permission.get_notify(action,user, 'auth_group')
         return Response({'message':'Transaction View'})
+# @api_view(['GET'])
+# @csrf_exempt
+# @permission_classes([permissions.IsAuthenticated,JWTTokenPermission])
+# def transaction_view(request):
+#     permission = JWTTokenPermission()
+#     action = f'Transaction view has been accessed using jwt token.'
+#     user = request.user.username
+#     permission.get_notify(action,user, 'auth_group')
+#     return Response({'message':'Transaction View'})
 
+# @api_view(['POST'])
+# # @csrf_exempt
+# # @permission_classes([permissions.IsAuthenticated, JWTTokenPermission])
+# def transaction_post(request):
+#     if request.method == 'POST':
+#         num1 = int(request.POST['number1'])
+#         num2 = int(request.POST['number2'])
 
+#         # chain_task.apply_async((num1, num2), queue='queue_1')
+#         result = num1+num2
+
+#         return Response(result)
+
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from celery import chain
+
+@csrf_exempt
+def queue_result(request):
+    if request.method == 'POST':
+        num1 = int(request.POST['number1'])
+        num2 = int(request.POST['number2'])
+
+        chain_task.apply_async((num1,num2),queue='queue_1')
+
+        return redirect('success')
+
+    return render(request,'tivs_app/index.html')
+
+def sucess(request):
+    return render(request, 'tivs_app/success.html')

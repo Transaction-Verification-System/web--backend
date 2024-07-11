@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'tivs_app',
     'rest_framework_simplejwt',
+    'django_celery_beat',
+    'django_celery_results'
   
 ]
 
@@ -118,7 +120,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -127,7 +128,10 @@ REST_FRAMEWORK = {
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG" : {
+            'hosts':[('localhost',6379)],
+        }
     }
 }
 
@@ -190,3 +194,37 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:8000',  # Adjust this based on your development settings
+]
+import os
+
+
+from celery import Celery
+from celery.schedules import crontab
+
+app = Celery('my_site')
+
+
+
+
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+
+CELERY_RESULT_BACKEND = 'django-db'
+
+CELERY_TASK_ROUTES = {
+    'tivs_app.tasks.chain_task':{'queue':'queue_1'},
+    'tivs_app.tasks.process_results':{'queue':'queue_1'},
+    'tivs_app.tasks.chain_task2':{'queue':'queue_2'},
+    'tivs_app.tasks.process_results2':{'queue':'queue_2'},
+}
+
+
+# CELERY_BEAT_SCHEDULE = {
+#     'scheduled_tasks':{
+#         'task':'tivs_app.tasks.chain_task',
+#         'schedule':crontab(minute='*/1'),
+#         'args':(3,2),
+#     }
+# }

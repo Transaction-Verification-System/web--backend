@@ -17,6 +17,7 @@ def ready_message(action,user):
 
 class AuthTokenPermission(BasePermission):
     def has_permission(self, request, view):
+        print('Hello permission')
         auth_token = request.headers.get('Authorization')
         token = Token.objects.get(user=request.user)
 
@@ -37,22 +38,28 @@ class AuthTokenPermission(BasePermission):
 
 class JWTTokenPermission(BasePermission):
     def has_permission(self, request, view):
-        jwt_token = request.headers.get('Authorization')
-        if jwt_token:
+        auth_header = request.headers.get('Authorization')
+        print('Authorization Header:', auth_header)
+        if auth_header:
             try:
-                jwt.decode(jwt_token, settings.SECRET_KEY, algorithms=['HS256'])
-                return True
-            except (ExpiredSignatureError, InvalidTokenError):
+                if auth_header.startswith('Bearer '):
+                    print('Yes')
+                    jwt_token = auth_header.split(' ')[1]
+                    print('JWT Token:', jwt_token)
+                    jwt.decode(jwt_token, settings.SECRET_KEY, algorithms=['HS256'])
+                    return True
+            except (ExpiredSignatureError, InvalidTokenError) as e:
+                print('JWT Token error:', str(e))
                 return False
         return False
     
-    def get_notify(self, action,user,group_name):
-        message = ready_message(action,user)
+    def get_notify(self, action, user, group_name):
+        message = ready_message(action, user)
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             group_name,
             {
-                'type':'send_message',
+                'type': 'send_message',
                 'message': message
             }
         )

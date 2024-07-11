@@ -6,31 +6,40 @@
 <body>
     <h1>WebSocket Test</h1>
     <div id="messages"></div>
+    <h1>Enter Two Numbers</h1>
+    <form action="{% url 'transaction' %}" method="post">
+        {% csrf_token %}
+        <label for="number1">Number 1:</label>
+        <input type="text" id="number1" name="number1" required>
+        <br><br>
+        <label for="number2">Number 2:</label>
+        <input type="text" id="number2" name="number2" required>
+        <br><br>
+        <button type="submit">Submit</button>
+    </form>
     <script>
-        // Connect to the WebSocket server
         const ws = new WebSocket('ws://127.0.0.1:8000/ws/chat/');
 
-        // Handle incoming messages
         ws.onmessage = function(event) {
             const messageDiv = document.getElementById('messages');
             const message = JSON.parse(event.data).message;
             const newMessage = document.createElement('div');
+            const task1 = message.addition;
+            const task2 = message.multiplication;
             newMessage.innerText = message;
             messageDiv.appendChild(newMessage);
             console.log(message)
+            console.log('Task1: ' + task1,'Task2: ' + task2)
         };
 
-        // Handle WebSocket connection opening
         ws.onopen = function(event) {
             console.log('WebSocket is connected.');
         };
 
-        // Handle WebSocket connection closing
         ws.onclose = function(event) {
             console.log('WebSocket is closed.');
         };
 
-        // Handle WebSocket errors
         ws.onerror = function(error) {
             console.error('WebSocket error observed:', error);
         };

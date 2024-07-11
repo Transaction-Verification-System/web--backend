@@ -31,3 +31,13 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User_Model
         fields = ['email','username']    
+
+class BlackListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlackListModel
+        fields = '__all__'
+
+class CustomerDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerData
+        fields = '__all__'
