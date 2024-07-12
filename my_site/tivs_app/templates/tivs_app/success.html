@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,6 +10,61 @@
     <div id="messages"></div>
     <script>
         const ws = new WebSocket('ws://127.0.0.1:8000/ws/chat/');
+
+        ws.onmessage = function(event) {
+            const messageDiv = document.getElementById('messages');
+            const message = JSON.parse(event.data).message;
+            const newMessage = document.createElement('div');
+            
+            if (message.Task === 'Task1:Addition and Multiplication') {
+                const task1 = message.addition_result;
+                const task2 = message.multiplication_result;
+                newMessage.innerText = `Addition Result: ${task1}, Multiplication Result: ${task2}`;
+                console.log('Task1: ' + task1, 'Task2: ' + task2);
+            } else if (message.Task === 'Task2:Substraction and Division') {
+                const task1 = message.Substraction_result;
+                const task2 = message.Division_result;
+                newMessage.innerText = `Substraction Result: ${task1}, Division Result: ${task2}`;
+                console.log('Task1: ' + task1, 'Task2: ' + task2);
+            } else {
+                newMessage.innerText = 'Unknown task received';
+            }
+            
+            messageDiv.appendChild(newMessage);
+            console.log(message);
+        };
+
+        ws.onopen = function(event) {
+            console.log('WebSocket is connected.');
+        };
+
+        ws.onclose = function(event) {
+            console.log('WebSocket is closed.');
+        };
+
+        ws.onerror = function(error) {
+            console.error('WebSocket error observed:', error);
+        };
+    </script>
+</body> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Successfully sent you.</h1>
+    <div id="messages"></div>
+    <script>
+        // Set WebSocket URL based on the environment
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = window.location.host;
+        const wsUrl = `${wsProtocol}//${wsHost}/ws/chat/`;
+
+        const ws = new WebSocket(wsUrl);
 
         ws.onmessage = function(event) {
             const messageDiv = document.getElementById('messages');

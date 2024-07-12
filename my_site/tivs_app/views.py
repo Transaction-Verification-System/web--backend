@@ -6,7 +6,6 @@ from django.middleware.csrf import get_token
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
 from rest_framework.views import APIView
 from rest_framework import status,permissions
 from rest_framework.authentication import SessionAuthentication,BasicAuthentication

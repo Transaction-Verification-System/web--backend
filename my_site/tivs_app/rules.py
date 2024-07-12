@@ -28,7 +28,7 @@ def calculate_reputation_score(data):
         score += 5
     if int(data["device_fraud_count"]) == 0:   
         score += 10
-    if int(data["device_distinct_emails_8w"]) < 2: #feweer distinct emails defines single users most of the time
+    if int(data["device_distinct_emails_8w"]) < 2: #fewer distinct emails defines single users most of the time
         score += 5
 
     # Negative Indicators
