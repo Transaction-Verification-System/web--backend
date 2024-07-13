@@ -203,6 +203,10 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOWED_ORIGINS = [
     'https://tvis.onrender.com',
 ]
+
+CSRF_COOKIE_SECURE = True  
+CSRF_COOKIE_HTTPONLY = True  
+
 import os
 
 
