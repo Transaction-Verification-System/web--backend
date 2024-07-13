@@ -3,7 +3,7 @@ version: '3.8'
 services:
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    command: uvicorn my_site.asgi:application --host 0.0.0.0 --port 8000
     env_file:
       - .env
     ports:
