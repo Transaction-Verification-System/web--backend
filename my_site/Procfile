@@ -1,0 +1,3 @@
+web: gunicorn my_site.wsgi --log-file -
+worker: celery -A my_site worker -Q queue_1,queue_2 -l info
+beat: celery -A my_site beat -l info

@@ -1,20 +1,8 @@
 version: '3'
 
 services:
-  web:
+  celery:
     build: .
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-  db:
-   image: postgres:13
-   environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin@123
-      POSTGRES_DB: tvis
-   ports:
-      - "5432:5432"
+    command: celery -A my_site beat -l INFO && celery -A my_site worker -Q queue_1,queue_2 -l info
+    env_file:
+      - .env

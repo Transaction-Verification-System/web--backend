@@ -24,7 +24,8 @@ from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from rest_framework.authentication import SessionAuthentication 
 from rest_framework import status,permissions
 from .tasks import chain_task,chain_task2
-from django.views.decorators.csrf import csrf_exempt,csrf_protect
+from django.views.decorators.csrf import csrf_exempt,csrf_protect,ensure_csrf_cookie
+
 from django.utils.decorators import method_decorator
 
 
@@ -132,7 +133,7 @@ class TransactionView(APIView):
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super(TransactionView, self).dispatch(*args, **kwargs)
-    
+    @method_decorator(ensure_csrf_cookie)
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
             data_list = request.data
