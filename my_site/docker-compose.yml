@@ -1,8 +1,23 @@
-version: '3'
+version: '3.8'
 
 services:
-  celery:
+  web:
     build: .
-    command: celery -A my_site beat -l INFO && celery -A my_site worker -Q queue_1,queue_2 -l info
+    command: python manage.py runserver 0.0.0.0:8000
     env_file:
       - .env
+    ports:
+      - "8000:8000"
+
+  celery_worker:
+    build: .
+    command: celery -A my_site worker -Q queue_1,queue_2 -l info
+    env_file:
+      - .env
+
+  celery_beat:
+    build: .
+    command: celery -A my_site beat -l info
+    env_file:
+      - .env
+

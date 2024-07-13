@@ -197,15 +197,16 @@ SIMPLE_JWT = {
 }
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://tvis.onrender.com',  # Adjust this based on your development settings
+    'https://tvis.onrender.com',
+    'https://127.0.0.1:8000'  # Adjust this based on your development settings
 ]
 
 CORS_ALLOWED_ORIGINS = [
     'https://tvis.onrender.com',
 ]
 
-CSRF_COOKIE_SECURE = True  
-CSRF_COOKIE_HTTPONLY = False
+# CSRF_COOKIE_SECURE = True  
+# CSRF_COOKIE_HTTPONLY = False
 
 import os
 
