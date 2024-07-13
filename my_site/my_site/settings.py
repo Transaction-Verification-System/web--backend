@@ -196,7 +196,7 @@ SIMPLE_JWT = {
 }
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://127.0.0.1:8000',  # Adjust this based on your development settings
+    'https://tvis.onrender.com',  # Adjust this based on your development settings
 ]
 import os
 
