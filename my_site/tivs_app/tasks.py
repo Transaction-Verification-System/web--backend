@@ -1,6 +1,6 @@
 from celery import Celery, shared_task,Task,chain
 from celery.exceptions import Retry
-import time, logging
+import time, logging ,json
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from .models import *
@@ -8,9 +8,13 @@ from rest_framework.response import Response
 from .rules import calculate_reputation_score
 from .serializers import *
 from django.utils import timezone
+from .utility import ISocketResponse
 
 app = Celery('my_site')
 logger = logging.getLogger(__name__)
+
+accepted_data = 0
+rejected_data = 0
 
 class CustomRetry(Task):
     autoretry_for = (Exception,)
@@ -51,31 +55,6 @@ def error_list(task_name,data,exc):
             error=str(exc),
             timestamp=timezone.now()
         )
-
-
-# def add(x, y):
-#     time.sleep(5)
-#     result = x + y
-#     logger.info('Addition Result: %s', result)
-#     return result
-
-# def multiply(x, y):
-#     time.sleep(5)
-#     result = x * y
-#     logger.info('Multiplication Result: %s', result)
-#     return result
-
-# def substract(x, y):
-#     time.sleep(5)
-#     result = x - y
-#     logger.info('Substraction Result: %s', result)
-#     return result
-
-# def divide(x, y):
-#     time.sleep(5)
-#     result = x / y
-#     logger.info('Division Result: %s', result)
-#     return result
 
 def blacklist_task(data):
     try:
@@ -120,19 +99,22 @@ def rules_engine(data):
 
 @shared_task(base = CustomRetry,queue = 'queue_1')
 def chain_task(x,index,data_list):
+    global accepted_data,rejected_data
     try:
         transaction_count = index+1
         result = blacklist_task(x)
         print('Result:',result)
 
-        send_message_channel(result,'BlackList',transaction_count)
         if result == 0:
+            send_message_channel(result,'black_list',transaction_count,accepted_data,data_list,rejected_data)
             chain(chain_task2.s(x,index,data_list)).apply_async(queue='queue_2')   
         if result == 1:
             #notification
-            if index+1 < len(data_list):
+            rejected_data+=1
+            if index + 1 < len(data_list):
                 next_data = data_list[index+1] 
                 index+=1
+                send_message_channel(result,'black_list',transaction_count,accepted_data,data_list,rejected_data)
                 chain(chain_task.s(next_data,index,data_list)).apply_async(queue='queue_1')  
             else:
                 return 'Black List Engine Completed sucessfully.'
@@ -143,24 +125,29 @@ def chain_task(x,index,data_list):
 
 @shared_task(base = CustomRetry,queue = 'queue_2')
 def chain_task2(x, index, data_list):
+    global accepted_data,rejected_data
     try:
         transaction_count = index+1
         result = rules_engine(x)
-        send_message_channel(result, 'RulesEngine',transaction_count)
+        
 
         if result == 0:
-            if index + 1 < len(data_list):
+            accepted_data+=1
+            if index + 1  < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
+                send_message_channel(result, 'rules_engine',transaction_count,accepted_data,data_list,rejected_data)
                 chain(chain_task.s(next_data, index, data_list)).apply_async(queue='queue_1')
             else:
                 return 'Rules Engine completed successfully.'
         
         if result == 1:
             # notification
+            rejected_data+=1
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
+                send_message_channel(result, 'rules_engine',transaction_count,accepted_data,data_list,rejected_data)
                 chain(chain_task.s(next_data, index, data_list)).apply_async(queue='queue_1')
             else:
                 return 'Rules Engine completed successfully.'
@@ -171,44 +158,55 @@ def chain_task2(x, index, data_list):
         raise exc
     
 
-def send_message_channel(result,task_name,transaction_count):
-    channel_layer = get_channel_layer()
-    if task_name == 'RulesEngine':
-        async_to_sync(channel_layer.group_send)(
-            'auth_group',
-            {
-                'type': 'send_message',
-                'message': {
-                    'Rules Engine Check': result,
-                    'Task':task_name,
-                    'Transaction id':transaction_count
-                }
-            }
+def send_message_channel(result,task_name,transaction_count,accepted_data,data_list,rejected_data):
+    if task_name == 'rules_engine':
+        response = ISocketResponse(
+            verified=result == 0,
+            message=f'{task_name} check succeeded' if result == 0 else f'{task_name} check failed due to blaclisted rules.',
+            current_transaction_id="txn"+str(transaction_count), 
+            next_transaction_id="txn"+str(transaction_count+1), 
+            total_transactions_checked = transaction_count,  
+            total_transactions_left = len(data_list)-transaction_count,  
+            total_transactions_accepted = accepted_data,  
+            total_transactions_rejected = rejected_data,  
+            percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
+            current_process="Rules Engine"
+        )
+    elif task_name == 'black_list':
+        response = ISocketResponse(
+            verified=result == 0,
+            message=f'{task_name} check succeeded' if result == 0 else f'{task_name} check failed due to blaclisted rules.',
+            current_transaction_id="txn"+str(transaction_count), 
+            next_transaction_id="txn"+str(transaction_count+1), 
+            total_transactions_checked = transaction_count,  
+            total_transactions_left = len(data_list)-transaction_count,  
+            total_transactions_accepted = accepted_data,  
+            total_transactions_rejected = rejected_data,  
+            percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
+            current_process="Black List"
+        )
+    else:
+        response = ISocketResponse(
+            verified=result == 0,
+            message=f'{task_name} check succeeded' if result == 0 else f'{task_name} check failed due to model fraud detection.',
+            current_transaction_id="txn"+str(transaction_count), 
+            next_transaction_id="txn"+str(transaction_count+1), 
+            total_transactions_checked = transaction_count,  
+            total_transactions_left = len(data_list)-transaction_count,  
+            total_transactions_accepted = accepted_data,  
+            total_transactions_rejected = rejected_data,  
+            percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
+            current_process="AI"
         )
 
-    elif task_name == 'BlackList':
-        async_to_sync(channel_layer.group_send)(
-            'auth_group',
-            {
-                'type':'send_message',
-                'message': {
-                    'Black List Check': result,
-                    'Task': task_name,
-                    'Transaction id':transaction_count
-                }
-            }
-        )    
-    else:
-        async_to_sync(channel_layer.group_send)(
-            'auth_group',
-            {
-               'type':'send_message',
-               'message': {
-                    'Model Check': result,
-                    'Task':task_name
-                }
-            }
-        )    
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        'auth_group',
+        {
+            'type': 'send_message',
+            'message': json.dumps(response.to_dict())
+        }
+    ) 
 
 # @shared_task(base = CustomRetry,queue = 'queue_1')
 # def chain_task(x,y,index,data_list):
