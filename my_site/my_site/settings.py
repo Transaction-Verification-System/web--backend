@@ -120,6 +120,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -197,6 +198,10 @@ SIMPLE_JWT = {
 
 CSRF_TRUSTED_ORIGINS = [
     'https://tvis.onrender.com',  # Adjust this based on your development settings
+]
+
+CORS_ALLOWED_ORIGINS = [
+    'https://tvis.onrender.com',
 ]
 import os
 
