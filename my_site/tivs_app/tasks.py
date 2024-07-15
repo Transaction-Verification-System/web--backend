@@ -92,6 +92,7 @@ def rules_engine(data,user_id):
             
         else:
             data['verified'] = True
+            data['failed_reason'] = 'Transaction Successful.'
             logger.info('Customer data saved.')
             
         
