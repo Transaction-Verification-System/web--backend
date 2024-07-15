@@ -1,5 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin,BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin,BaseUserManager,User
+from django.conf import settings
 
 
 # Create your models here.
@@ -49,6 +50,7 @@ class AppUser(AbstractBaseUser,PermissionsMixin):
 
 class BlackListModel(models.Model):
     id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     phone = models.CharField(max_length=15)
 
     def __str__(self):
@@ -56,6 +58,7 @@ class BlackListModel(models.Model):
 
 class CustomerData(models.Model):
     id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     income = models.FloatField()
     name_email_similarity = models.FloatField()
     prev_address_months_count = models.IntegerField()
@@ -94,6 +97,7 @@ class CustomerData(models.Model):
 
 class ErrorLogsModel(models.Model):
     id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     task_name = models.CharField(max_length=255)
     data = models.JSONField()
     error = models.TextField()
