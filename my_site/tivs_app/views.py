@@ -96,7 +96,7 @@ def chat_view(request):
     return render(request, 'tivs_app/index.html')    
 
 class UserView(APIView):
-    permission_classes = [permissions.IsAuthenticated,AuthTokenPermission]
+    permission_classes = [permissions.IsAuthenticated,JWTTokenPermission]
     
 
     def get(self, request):
