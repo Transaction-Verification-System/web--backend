@@ -84,7 +84,7 @@ class LoginView(APIView):
 
   
 class LogoutView(APIView):
-    permission_classes=[permissions.IsAuthenticated,AuthTokenPermission]
+    permission_classes=[permissions.IsAuthenticated,JWTTokenPermission]
     def post(self,request):
         token = Token.objects.get(user=request.user)
         token.delete()
@@ -116,7 +116,7 @@ class UserView(APIView):
         return Response({'user':user,'message':'Home view accessed with auth token.','passed_customer_data': passed_serializer.data,'failed_customer_data':failed_serializer.data}, status=status.HTTP_200_OK)
 
 class UserDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticated, AuthTokenPermission]
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self, request, pk):
         user = request.user
