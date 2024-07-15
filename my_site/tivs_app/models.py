@@ -92,6 +92,7 @@ class CustomerData(models.Model):
     month = models.IntegerField()
     phone = models.CharField(max_length=15)
     verified = models.BooleanField()
+    failed_reason = models.CharField(max_length=255)
 
     def __str__(self):
         return f"Customer Data: {self.id}"

@@ -59,11 +59,16 @@ def blacklist_task(data,user_id):
     try:
         phone = data['phone']
         logger.info('Phone number:', phone)
+        serializer = CustomerDataSerializer(data=data)
         
         blacklist_check = BlackListModel.objects.filter(phone=phone,user_id = user_id).exists()
         logger.info('Checking blacklist:', blacklist_check) 
         
         if blacklist_check:
+            data['failed_reason'] = 'Transaction Failed due to blacklist check.'
+            
+            if serializer.is_valid():
+                serializer.save()
             logger.info('Phone number is blacklisted. Skipping further processing.')
             return 1
         else:
@@ -81,6 +86,7 @@ def rules_engine(data,user_id):
         
         if score < 30:
             data['verified'] = False
+            data['failed_reason'] = 'Transaction Failed due to reputation score.'
             BlackListModel.objects.create(phone=data['phone'],user_id=user_id)
             logger.info('Transaction failed due to reputation list.')
             
