@@ -65,9 +65,10 @@ def blacklist_task(data,user_id):
         logger.info('Checking blacklist:', blacklist_instance is not None) 
         
         if blacklist_instance:
-            data['failed_reason'] = 'Transaction Failed due to blacklist check.'
+            
             
             serializer = CustomerDataSerializer(data=data)
+            data['failed_reason'] = 'Transaction Failed due to blacklist check.'
 
             if serializer.is_valid():
                 print('Transaction Valid')
