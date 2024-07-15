@@ -102,23 +102,26 @@ class UserView(APIView):
     def get(self, request):
         user = request.user
         print('User',user)
-        customer_data = CustomerData.objects.filter(user=user)
-        serializer = CustomerDataSerializer(customer_data, many=True)
+        
+        customer_data_failed = CustomerData.objects.filter(user=user ,verified = False)
+        customer_data_passed = CustomerData.objects.filter(user=user,verified = True)
+
+        failed_serializer = CustomerDataSerializer(customer_data_failed, many=True)
+        passed_serializer = CustomerDataSerializer(customer_data_passed, many=True)
+
         permission = AuthTokenPermission()
         action = f'User view has been accessed using auth token.'
         user = request.user.username
         permission.get_notify(action,user, 'auth_group')
-        return Response({'message':'Home view accessed with auth token.','Customer Data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'message':'Home view accessed with auth token.','passed_customer_data': passed_serializer.data,'failed_customer_data':failed_serializer.data}, status=status.HTTP_200_OK)
 
 class UserDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated, AuthTokenPermission]
 
     def get(self, request, pk):
         user = request.user
-        
-
         try:
-            customer_data = CustomerData.objects.get(user=user, pk=pk)
+            customer_data = CustomerData.objects.get(user=user,pk=pk)
             serializer = CustomerDataSerializer(customer_data)
 
             return Response({'message': 'Data retrieved successfully.', 'Customer Data': serializer.data}, status=status.HTTP_200_OK)

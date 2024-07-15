@@ -65,12 +65,7 @@ def blacklist_task(data,user_id):
         logger.info('Checking blacklist:', blacklist_check) 
         
         if blacklist_check:
-            # data['failed_reason'] = 'Transaction Failed due to blacklist check.'
-            # data['verified'] = False
-            # serializer = CustomerDataSerializer(data=data)
-
-            # if serializer.is_valid():
-            #     serializer.save(user_id=user_id)
+            
             logger.info('Phone number is blacklisted. Skipping further processing.')
             return 1
         else:
@@ -88,13 +83,13 @@ def rules_engine(data,user_id):
         
         if score < 30:
             data['verified'] = False
-            data['failed_reason'] = 'Transaction Failed due to reputation score.'
+            data['reason'] = 'Transaction Failed due to reputation score.'
             BlackListModel.objects.create(phone=data['phone'],user_id=user_id)
             logger.info('Transaction failed due to reputation list.')
             
         else:
             data['verified'] = True
-            data['failed_reason'] = 'Transaction Successful.'
+            data['reason'] = 'Transaction Successful.'
             logger.info('Customer data saved.')
             
         
@@ -133,7 +128,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
             rejected_data += 1
             serializer = CustomerDataSerializer(data=x)
             x['user'] = user_id
-            x['failed_reason'] = 'Transaction Failed due to blacklist check.'
+            x['reason'] = 'Transaction Failed due to blacklist check.'
             x['verified'] = False
 
             if serializer.is_valid():
@@ -214,7 +209,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_left = len(data_list)-transaction_count,  
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
-            percentage_of_transactions_processed = 0 if result == 0 else round((transaction_count/len(data_list))*100),  
+            percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
             current_process="black_list"
         )
     else:
