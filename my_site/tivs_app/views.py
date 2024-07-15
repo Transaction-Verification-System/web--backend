@@ -113,7 +113,7 @@ class UserView(APIView):
         action = f'User view has been accessed using auth token.'
         user = request.user.username
         permission.get_notify(action,user, 'auth_group')
-        return Response({'message':'Home view accessed with auth token.','passed_customer_data': passed_serializer.data,'failed_customer_data':failed_serializer.data}, status=status.HTTP_200_OK)
+        return Response({'user':user,'message':'Home view accessed with auth token.','passed_customer_data': passed_serializer.data,'failed_customer_data':failed_serializer.data}, status=status.HTTP_200_OK)
 
 class UserDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated, AuthTokenPermission]
