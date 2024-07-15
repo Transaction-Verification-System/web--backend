@@ -181,7 +181,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_left = len(data_list)-transaction_count,  
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
-            percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
+            percentage_of_transactions_processed = 0 if result == 0 else round((transaction_count/len(data_list))*100),  
             current_process="black_list"
         )
     else:
