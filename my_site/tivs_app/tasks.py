@@ -166,7 +166,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
             percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
-            current_process="Rules Engine"
+            current_process="rules_engine"
         )
     elif task_name == 'black_list':
         response = ISocketResponse(
@@ -179,7 +179,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
             percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
-            current_process="Black List"
+            current_process="black_list"
         )
     else:
         response = ISocketResponse(
