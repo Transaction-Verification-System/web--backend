@@ -84,7 +84,7 @@ class LoginView(APIView):
 
   
 class LogoutView(APIView):
-    permission_classes=[permissions.IsAuthenticated]
+    permission_classes=[permissions.IsAuthenticated,AuthTokenPermission]
     def post(self,request):
         token = Token.objects.get(user=request.user)
         token.delete()
@@ -146,8 +146,7 @@ class TransactionView(APIView):
             print(f'Accepted datas are {accepted_data} and {rejected_data}')
             print('Data List',data_list)
             try:
-                # num1 = int(data.get('number1'))
-                # num2 = int(data.get('number2'))
+                
                 first_data = data_list[0]
                 chain_task.apply_async((first_data,0, data_list , accepted_data, rejected_data,user_id), queue='queue_1')
                 return redirect('success')
@@ -166,28 +165,7 @@ class TransactionView(APIView):
         user = request.user.username
         permission.get_notify(action,user, 'auth_group')
         return Response({'message':'Transaction View'})
-# @api_view(['GET'])
-# @csrf_exempt
-# @permission_classes([permissions.IsAuthenticated,JWTTokenPermission])
-# def transaction_view(request):
-#     permission = JWTTokenPermission()
-#     action = f'Transaction view has been accessed using jwt token.'
-#     user = request.user.username
-#     permission.get_notify(action,user, 'auth_group')
-#     return Response({'message':'Transaction View'})
 
-# @api_view(['POST'])
-# # @csrf_exempt
-# # @permission_classes([permissions.IsAuthenticated, JWTTokenPermission])
-# def transaction_post(request):
-#     if request.method == 'POST':
-#         num1 = int(request.POST['number1'])
-#         num2 = int(request.POST['number2'])
-
-#         # chain_task.apply_async((num1, num2), queue='queue_1')
-#         result = num1+num2
-
-#         return Response(result)
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt

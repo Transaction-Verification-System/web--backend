@@ -5,7 +5,9 @@ from django.conf import settings
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
+import logging
 
+logger = logging.getLogger(__name__)
 
 
 def ready_message(action,user):
@@ -17,24 +19,35 @@ def ready_message(action,user):
 
 class AuthTokenPermission(BasePermission):
     def has_permission(self, request, view):
-        print('Hello permission')
-        auth_token = request.headers.get('Authorization')
-        token = Token.objects.get(user=request.user)
-
-        if auth_token==token.key:
-            return True
-        else:    
+        auth_header = request.headers.get('Authorization')
+        
+        if not auth_header:
             return False
-    def get_notify(self,action,user,group_name):
-        message = ready_message(action,user)
+        
+        if not auth_header.startswith('Token '):
+            return False
+        
+        auth_token = auth_header.split(' ')[1]
+        print('Auth token:',auth_token)
+        print('User:',request.user)
+
+        try:
+            token = Token.objects.get(key=auth_token)
+            request.user = token.user 
+            return True
+        except Token.DoesNotExist:
+            return False
+
+    def get_notify(self, action, user, group_name):
+        message = ready_message(action, user)
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-           group_name,
+            group_name,
             {
-                'type':'send_message',
+                'type': 'send_message',
                 'message': message
             }
-        )    
+        )
 
 class JWTTokenPermission(BasePermission):
     def has_permission(self, request, view):
