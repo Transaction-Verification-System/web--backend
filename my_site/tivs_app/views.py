@@ -101,6 +101,7 @@ class UserView(APIView):
 
     def get(self, request):
         user = request.user
+        print('User',user)
         customer_data = CustomerData.objects.filter(user=user)
         serializer = CustomerDataSerializer(customer_data, many=True)
         permission = AuthTokenPermission()
@@ -109,7 +110,22 @@ class UserView(APIView):
         permission.get_notify(action,user, 'auth_group')
         return Response({'message':'Home view accessed with auth token.','Customer Data': serializer.data}, status=status.HTTP_200_OK)
 
+class UserDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, AuthTokenPermission]
 
+    def get(self, request, pk):
+        user = request.user
+        
+
+        try:
+            customer_data = CustomerData.objects.get(user=user, pk=pk)
+            serializer = CustomerDataSerializer(customer_data)
+
+            return Response({'message': 'Data retrieved successfully.', 'Customer Data': serializer.data}, status=status.HTTP_200_OK)
+
+        except CustomerData.DoesNotExist:
+            return Response({'error': 'Data not found'}, status=status.HTTP_404_NOT_FOUND)
+        
 class TransactionView(APIView):
     permission_classes = [permissions.IsAuthenticated,JWTTokenPermission]
     print('T')

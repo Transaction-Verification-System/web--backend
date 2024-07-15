@@ -61,15 +61,20 @@ def blacklist_task(data,user_id):
         logger.info('Phone number:', phone)
         
         
-        blacklist_check = BlackListModel.objects.filter(phone=phone,user_id = user_id).exists()
-        logger.info('Checking blacklist:', blacklist_check) 
+        blacklist_instance = BlackListModel.objects.get(phone=phone, user_id=user_id)
+        logger.info('Checking blacklist:', blacklist_instance is not None) 
         
-        if blacklist_check:
+        if blacklist_instance:
             data['failed_reason'] = 'Transaction Failed due to blacklist check.'
-            serializer = CustomerDataSerializer(data=data)
             
+            serializer = CustomerDataSerializer(data=data, instance=blacklist_instance)
+
             if serializer.is_valid():
                 serializer.save(user_id=user_id)
+                logger.info('Customer data saved.')
+            else:
+                logger.error(f'Serializer errors: {serializer.errors}')
+            
             logger.info('Phone number is blacklisted. Skipping further processing.')
             return 1
         else:
