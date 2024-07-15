@@ -139,13 +139,15 @@ class TransactionView(APIView):
             data_list = request.data
             accepted_data = 0
             rejected_data = 0
+            user_id = request.user.id
+            print('User ID:',user_id)
             print(f'Accepted datas are {accepted_data} and {rejected_data}')
             print('Data List',data_list)
             try:
                 # num1 = int(data.get('number1'))
                 # num2 = int(data.get('number2'))
                 first_data = data_list[0]
-                chain_task.apply_async((first_data,0, data_list , accepted_data, rejected_data), queue='queue_1')
+                chain_task.apply_async((first_data,0, data_list , accepted_data, rejected_data,user_id), queue='queue_1')
                 return redirect('success')
             except KeyError as e:
                 return Response({'error': f'Missing parameter: {str(e)}'}, status=400)

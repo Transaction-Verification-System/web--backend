@@ -40,7 +40,7 @@ class CustomRetry(Task):
 
 app.Task = CustomRetry
 
-def error_list(task_name,data,exc):
+def error_list(task_name,data,exc,user_id):
     retries = CustomRetry.retry_kwargs['max_retires']
     if retries > 0:
         retries -= 1
@@ -51,15 +51,16 @@ def error_list(task_name,data,exc):
             task_name=task_name,
             data=data,
             error=str(exc),
-            timestamp=timezone.now()
+            timestamp=timezone.now(),
+            user_id=user_id
         )
 
-def blacklist_task(data):
+def blacklist_task(data,user_id):
     try:
         phone = data['phone']
         logger.info('Phone number:', phone)
         
-        blacklist_check = BlackListModel.objects.filter(phone=phone).exists()
+        blacklist_check = BlackListModel.objects.filter(phone=phone,user_id = user_id).exists()
         logger.info('Checking blacklist:', blacklist_check) 
         
         if blacklist_check:
@@ -71,14 +72,15 @@ def blacklist_task(data):
         logger.error(f'Error in blacklist_task: {exc}')
         raise exc
 
-def rules_engine(data):
+def rules_engine(data,user_id):
     try:
         score = calculate_reputation_score(data)
+        data['user'] = user_id
         serializer = CustomerDataSerializer(data=data)
         
         if serializer.is_valid():
             if score < 30:
-                BlackListModel.objects.create(phone=data['phone'])
+                BlackListModel.objects.create(phone=data['phone'],user_id=user_id)
                 logger.info('Transaction failed due to reputation list.')
                 return 1
             else:
@@ -96,10 +98,10 @@ def rules_engine(data):
 
 
 @shared_task(base=CustomRetry, queue='queue_1')
-def chain_task(x, index, data_list, accepted_data, rejected_data):
+def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
     try:
         transaction_count = index + 1
-        result = blacklist_task(x)
+        result = blacklist_task(x,user_id)
         logger.info(f'Result: {result}')
         logger.info(f'Index Task1: {index}')
 
@@ -107,7 +109,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data):
 
         if result == 0:
             send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction)
-            chain(chain_task2.s(x, index, data_list, accepted_data, rejected_data)).apply_async(queue='queue_2')
+            chain(chain_task2.s(x, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_2')
         if result == 1:
             #notification
             rejected_data += 1
@@ -115,19 +117,19 @@ def chain_task(x, index, data_list, accepted_data, rejected_data):
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
-                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data)).apply_async(queue='queue_1')
+                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_1')
             else:
                 return 'Black List Engine Completed successfully.'
     except Exception as exc:
         logger.error(f'Task 1 failed: {exc}')
-        error_list('BlackList', x, exc)
+        error_list('BlackList', x, exc,user_id)
         raise exc
 
 @shared_task(base=CustomRetry, queue='queue_2')
-def chain_task2(x, index, data_list, accepted_data, rejected_data):
+def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
     try:
         transaction_count = index + 1
-        result = rules_engine(x)
+        result = rules_engine(x,user_id)
         logger.info(f'Index Task2: {index}')
         is_last_transaction = index+1 == len(data_list)
         
@@ -137,7 +139,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data):
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
-                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data)).apply_async(queue='queue_1')
+                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_1')
             else:
                 return 'Rules Engine completed successfully.'
         
@@ -148,12 +150,12 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data):
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
-                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data)).apply_async(queue='queue_1')
+                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_1')
             else:
                 return 'Rules Engine completed successfully.'
     except Exception as exc:
         logger.error(f'Task 2 failed: {exc}')
-        error_list('Rules_Engine', x, exc)
+        error_list('Rules_Engine', x, exc,user_id)
         raise exc
     
 
