@@ -91,6 +91,7 @@ class CustomerData(models.Model):
     device_fraud_count = models.IntegerField()
     month = models.IntegerField()
     phone = models.CharField(max_length=15)
+    verified = models.BooleanField()
 
     def __str__(self):
         return f"Customer Data: {self.id}"

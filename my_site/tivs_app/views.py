@@ -97,34 +97,17 @@ def chat_view(request):
 
 class UserView(APIView):
     permission_classes = [permissions.IsAuthenticated,AuthTokenPermission]
-    @method_decorator(csrf_exempt)
-    def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return Response({'error': 'User is not authenticated'}, status=status.HTTP_403_FORBIDDEN)
-
-        num1 = request.POST.get('number1')
-        num2 = request.POST.get('number2')
-
-        if num1 is None or num2 is None:
-            return Response({'error': 'Missing parameters'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            num1 = int(num1)
-            num2 = int(num2)
-        except ValueError:
-            return Response({'error': 'Invalid number format'}, status=status.HTTP_400_BAD_REQUEST)
-
-        result = num1 + num2
-        return Response({'result': result}, status=status.HTTP_200_OK)
+    
 
     def get(self, request):
-        print('Hello')
+        user = request.user
+        customer_data = CustomerData.objects.filter(user=user)
+        serializer = CustomerDataSerializer(customer_data, many=True)
         permission = AuthTokenPermission()
         action = f'User view has been accessed using auth token.'
         user = request.user.username
         permission.get_notify(action,user, 'auth_group')
-        serializer = UserSerializer(request.user)
-        return Response({'user': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'message':'Home view accessed with auth token.','Customer Data': serializer.data}, status=status.HTTP_200_OK)
 
 
 class TransactionView(APIView):

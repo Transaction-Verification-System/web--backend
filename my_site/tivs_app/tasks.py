@@ -81,10 +81,11 @@ def rules_engine(data,user_id):
         if serializer.is_valid():
             if score < 30:
                 BlackListModel.objects.create(phone=data['phone'],user_id=user_id)
+                serializer.save(verified=False)
                 logger.info('Transaction failed due to reputation list.')
                 return 1
             else:
-                serializer.save()
+                serializer.save(verified=True)
                 logger.info('Customer data saved.')
                 return 0
         else:
@@ -163,7 +164,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
     if task_name == 'rules_engine':
         response = ISocketResponse(
             verified=result == 0,
-            message = f'{task_name} check succeeded' if result == 0 else f'{task_name} check failed due to blaclisted rules.',
+            message = f'{task_name} check succeeded' if result == 0 else f'{task_name} check failed due to weight calculation rules.',
             current_transaction_id = "txn"+str(transaction_count), 
             next_transaction_id = 'None' if is_last_transaction else "txn"+str(transaction_count+1), 
             total_transactions_checked = index,  
