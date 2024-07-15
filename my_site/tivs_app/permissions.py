@@ -24,7 +24,7 @@ class AuthTokenPermission(BasePermission):
         if not auth_header:
             return False
         
-        if not auth_header.startswith('Token '):
+        if not auth_header.startswith('Bearer '):
             return False
         
         auth_token = auth_header.split(' ')[1]
