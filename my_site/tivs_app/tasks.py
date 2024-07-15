@@ -78,15 +78,23 @@ def rules_engine(data,user_id):
         data['user'] = user_id
         serializer = CustomerDataSerializer(data=data)
         
+        
+        if score < 30:
+            data['verified'] = False
+            BlackListModel.objects.create(phone=data['phone'],user_id=user_id)
+            logger.info('Transaction failed due to reputation list.')
+            
+        else:
+            data['verified'] = True
+            logger.info('Customer data saved.')
+            
+        
         if serializer.is_valid():
+            serializer.save()
+            
             if score < 30:
-                BlackListModel.objects.create(phone=data['phone'],user_id=user_id)
-                serializer.save(verified=False)
-                logger.info('Transaction failed due to reputation list.')
                 return 1
             else:
-                serializer.save(verified=True)
-                logger.info('Customer data saved.')
                 return 0
         else:
             errors = serializer.errors
