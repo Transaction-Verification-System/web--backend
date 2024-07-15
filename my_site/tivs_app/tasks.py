@@ -61,22 +61,16 @@ def blacklist_task(data,user_id):
         logger.info('Phone number:', phone)
         
         
-        blacklist_instance = BlackListModel.objects.get(phone=phone, user_id=user_id)
-        logger.info('Checking blacklist:', blacklist_instance is not None) 
+        blacklist_check = BlackListModel.objects.filter(phone=phone,user_id = user_id).exists()
+        logger.info('Checking blacklist:', blacklist_check) 
         
-        if blacklist_instance:
-            
-            
-            serializer = CustomerDataSerializer(data=data)
-            data['failed_reason'] = 'Transaction Failed due to blacklist check.'
+        if blacklist_check:
+            # data['failed_reason'] = 'Transaction Failed due to blacklist check.'
+            # data['verified'] = False
+            # serializer = CustomerDataSerializer(data=data)
 
-            if serializer.is_valid():
-                print('Transaction Valid')
-                serializer.save()
-                logger.info('Customer data saved.')
-            else:
-                logger.error(f'Serializer errors: {serializer.errors}')
-            
+            # if serializer.is_valid():
+            #     serializer.save(user_id=user_id)
             logger.info('Phone number is blacklisted. Skipping further processing.')
             return 1
         else:
@@ -137,6 +131,19 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
         if result == 1:
             #notification
             rejected_data += 1
+            serializer = CustomerDataSerializer(data=x)
+            x['user'] = user_id
+            x['failed_reason'] = 'Transaction Failed due to blacklist check.'
+            x['verified'] = False
+
+            if serializer.is_valid():
+                print('Transaction Valid')
+                serializer.save()
+                logger.info('Customer data saved.')
+            else:
+                logger.info('Invalid Serilializer')
+                logger.error(f'Serializer errors: {serializer.errors}')
+
             send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
