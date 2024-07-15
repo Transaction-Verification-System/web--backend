@@ -104,12 +104,12 @@ def chain_task(x, index, data_list, accepted_data, rejected_data):
         logger.info(f'Index Task1: {index}')
 
         if result == 0:
-            send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data)
+            send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index)
             chain(chain_task2.s(x, index, data_list, accepted_data, rejected_data)).apply_async(queue='queue_2')
         if result == 1:
             #notification
             rejected_data += 1
-            send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data)
+            send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index)
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
@@ -130,7 +130,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data):
         
         if result == 0:
             accepted_data += 1
-            send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data)
+            send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index)
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
@@ -141,7 +141,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data):
         if result == 1:
             #notification
             rejected_data += 1
-            send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data)
+            send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index)
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
@@ -154,14 +154,14 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data):
         raise exc
     
 
-def send_message_channel(result,task_name,transaction_count,accepted_data,data_list,rejected_data):
+def send_message_channel(result,task_name,transaction_count,accepted_data,data_list,rejected_data,index):
     if task_name == 'rules_engine':
         response = ISocketResponse(
             verified=result == 0,
             message=f'{task_name} check succeeded' if result == 0 else f'{task_name} check failed due to blaclisted rules.',
             current_transaction_id="txn"+str(transaction_count), 
             next_transaction_id="txn"+str(transaction_count+1), 
-            total_transactions_checked = transaction_count,  
+            total_transactions_checked = index,  
             total_transactions_left = len(data_list)-transaction_count,  
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
@@ -174,7 +174,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             message=f'{task_name} check succeeded' if result == 0 else f'{task_name} check failed due to blaclisted rules.',
             current_transaction_id="txn"+str(transaction_count), 
             next_transaction_id="txn"+str(transaction_count+1), 
-            total_transactions_checked = transaction_count,  
+            total_transactions_checked = index,  
             total_transactions_left = len(data_list)-transaction_count,  
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
@@ -187,7 +187,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             message=f'{task_name} check succeeded' if result == 0 else f'{task_name} check failed due to model fraud detection.',
             current_transaction_id="txn"+str(transaction_count), 
             next_transaction_id="txn"+str(transaction_count+1), 
-            total_transactions_checked = transaction_count,  
+            total_transactions_checked = index,  
             total_transactions_left = len(data_list)-transaction_count,  
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
