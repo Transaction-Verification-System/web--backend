@@ -4,3 +4,4 @@ from .models import *
 admin.site.register(AppUser)
 admin.site.register(BlackListModel)
 admin.site.register(CustomerData)
+admin.site.register(ErrorLogsModel)
