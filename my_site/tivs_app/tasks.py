@@ -5,7 +5,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from .models import *
 from rest_framework.response import Response
-from .rules import calculate_reputation_score
+from .rules import calculate_reputation_score,model_check
 from .serializers import *
 from django.utils import timezone
 from .utility import ISocketResponse
@@ -28,6 +28,8 @@ class CustomRetry(Task):
             new_queue = 'queue_2'
         elif current_queue == 'queue_2':
             new_queue = 'queue_1'
+        elif current_queue == 'queue_2':
+            new_queue = 'queue_3'
         else:
             logger.error(f'Unknown Task {task_id} retrying in queue. Skipping.')
             return None
@@ -77,36 +79,55 @@ def blacklist_task(data,user_id):
 def rules_engine(data,user_id):
     try:
         score = calculate_reputation_score(data)
-        data['user'] = user_id
-        serializer = CustomerDataSerializer(data=data)
         
         
         if score < 30:
-            data['verified'] = False
-            data['reason'] = 'Transaction Failed due to reputation score.'
             BlackListModel.objects.create(phone=data['phone'],user_id=user_id)
             logger.info('Transaction failed due to reputation list.')
+            return 1
             
+        else:
+            
+            logger.info('Customer data saved.')
+            return 0
+            
+    except Exception as exc:
+        logger.error(f'Error in rules_engine: {exc}')
+        raise exc
+
+def ai_prediction(data,user_id):
+    try:
+        result = model_check(data)
+
+        data['user'] = user_id
+
+        serializer = CustomerDataSerializer(data=data)
+
+        if result == False:
+            data['verified'] = False
+            data['reason'] = 'Transaction Failed due to AI model prediction.'
+            logger.info('Transaction failed due to AI model prediction.')        
+
         else:
             data['verified'] = True
             data['reason'] = 'Transaction Successful.'
             logger.info('Customer data saved.')
-            
-        
+
+
         if serializer.is_valid():
             serializer.save(user_id=user_id)
-            
-            if score < 30:
+
+            if result == False:
                 return 1
             else:
                 return 0
         else:
             errors = serializer.errors
             logger.error(f'Serializer errors: {errors}')
-            return {'errors': errors, 'reputation_score': score}
+            return {'errors': errors, 'AI Score': result}
     except Exception as exc:
-        logger.error(f'Error in rules_engine: {exc}')
-        raise exc
+        logger.error(f'Error in AI prediction: {exc}')
+        raise exc    
 
 
 
@@ -126,6 +147,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
         if result == 1:
             #notification
             rejected_data += 1
+
             serializer = CustomerDataSerializer(data=x)
             x['user'] = user_id
             x['reason'] = 'Transaction Failed due to blacklist check.'
@@ -160,18 +182,25 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
         is_last_transaction = index+1 == len(data_list)
         
         if result == 0:
-            accepted_data += 1
-            send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
-            if index + 1 < len(data_list):
-                next_data = data_list[index + 1]
-                index += 1
-                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_1')
-            else:
-                return 'Rules Engine completed successfully.'
+            send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction)
+            chain(chain_task3.s(x, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_3')
         
         if result == 1:
             #notification
-            rejected_data += 1
+
+            serializer = CustomerDataSerializer(data=x)
+            x['user'] = user_id
+            x['reason'] = 'Transaction Failed due to Reputation List check.'
+            x['verified'] = False
+
+            if serializer.is_valid():
+                print('Transaction Valid')
+                serializer.save()
+                logger.info('Customer data saved.')
+            else:
+                logger.info('Invalid Serilializer')
+                logger.error(f'Serializer errors: {serializer.errors}')
+
             send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
@@ -183,7 +212,41 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
         logger.error(f'Task 2 failed: {exc}')
         error_list('Rules_Engine', x, exc,user_id)
         raise exc
-    
+
+
+@shared_task(base=CustomRetry, queue='queue_3')
+def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
+    try:
+        transaction_count = index + 1
+        result = ai_prediction(x,user_id)
+        logger.info(f'Index Task3: {index}')
+        is_last_transaction = index+1 == len(data_list)
+        
+        if result == 0:
+            accepted_data += 1
+            send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
+            if index + 1 < len(data_list):
+                next_data = data_list[index + 1]
+                index += 1
+                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_1')
+            else:
+                return 'Rules Engine completed successfully.'
+        
+        if result == 1:
+            #notification
+            rejected_data += 1
+
+            send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
+            if index + 1 < len(data_list):
+                next_data = data_list[index + 1]
+                index += 1
+                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_1')
+            else:
+                return 'AI Prediction completed successfully.'
+    except Exception as exc:
+        logger.error(f'Task 2 failed: {exc}')
+        error_list('AI Prediction', x, exc,user_id)
+        raise exc
 
 def send_message_channel(result,task_name,transaction_count,accepted_data,data_list,rejected_data,index,is_last_transaction=False):
     if task_name == 'rules_engine':
@@ -223,7 +286,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
             percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
-            current_process="AI"
+            current_process="ai_model"
         )
 
     channel_layer = get_channel_layer()

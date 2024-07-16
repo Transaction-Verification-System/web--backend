@@ -1,3 +1,6 @@
+import requests
+import json
+
 def calculate_reputation_score(data):
     score = 0
 
@@ -58,3 +61,21 @@ def calculate_reputation_score(data):
         score -= 10
 
     return score
+
+
+def model_check(data):
+
+    url = 'https://model-backend-qys8.onrender.com/banking-fraud/predict'
+
+    # Send a POST request with JSON data
+    response = requests.post(url, json=data)
+
+    data = response.json()
+    # Print the response
+    print("Status Code:", response.status_code)
+    print("Response Body:", response.json())
+
+    print('Status:',data['isFraud'])
+
+    return data['isFraud']
+
