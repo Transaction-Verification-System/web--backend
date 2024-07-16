@@ -230,9 +230,8 @@ CELERY_RESULT_BACKEND = 'django-db'
 
 CELERY_TASK_ROUTES = {
     'tivs_app.tasks.chain_task':{'queue':'queue_1'},
-    'tivs_app.tasks.process_results':{'queue':'queue_1'},
     'tivs_app.tasks.chain_task2':{'queue':'queue_2'},
-    'tivs_app.tasks.process_results2':{'queue':'queue_2'},
+    'tivs_app.tasks.chain_task3':{'queue':'queue_3'},
 }
 
 
