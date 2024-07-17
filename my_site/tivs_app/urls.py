@@ -13,3 +13,5 @@ urlpatterns = [
     path('success/',sucess,name='success'),
     path('history/detail/<int:pk>/',UserDetailView.as_view(),name='user_detail'),
 ]
+
+

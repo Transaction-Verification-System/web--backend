@@ -127,14 +127,44 @@ REST_FRAMEWORK = {
     )
 }
 
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG" : {
+#             'hosts': [os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')],
+#         }
+#     }
+# }
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG" : {
-            'hosts':[os.environ.get('CELERY_BROKER_URL','redis://localhost:6379')],
+            'hosts': [('localhost', 6379)],
         }
     }
 }
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_rabbitmq.core.RabbitmqChannelLayer",
+#         "CONFIG": {
+#             "URL": os.environ.get('CELERY_BROKER_URL', 'amqp://guest:guest@rabbitmq:5672//'),
+#         },
+#     },
+# }
+
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer",
+#         "CONFIG": {},
+#     },
+# }
+
+# CELERY_BROKER_URL = 'redis://redis:6379'
+# CELERY_RESULT_BACKEND = 'rpc://'
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -203,6 +233,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 CORS_ALLOWED_ORIGINS = [
     'https://tvis.onrender.com',
+
 ]
 
 # CSRF_COOKIE_SECURE = True  
@@ -219,7 +250,8 @@ app = Celery('my_site')
 
 
 
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')
+
 # CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
@@ -242,3 +274,6 @@ CELERY_TASK_ROUTES = {
 #         'args':(3,2),
 #     }
 # }
+
+
+
