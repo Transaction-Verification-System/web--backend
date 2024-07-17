@@ -133,6 +133,8 @@ def ai_prediction(data,user_id):
 
 @shared_task(base=CustomRetry, queue='queue_1')
 def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
+    logger.info('Task 1')
+    
     try:
         transaction_count = index + 1
         result = blacklist_task(x,user_id)
@@ -175,6 +177,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
 
 @shared_task(base=CustomRetry, queue='queue_2')
 def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
+    logger.info('Task 2')
     try:
         transaction_count = index + 1
         result = rules_engine(x,user_id)
@@ -216,6 +219,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
 
 @shared_task(base=CustomRetry, queue='queue_3')
 def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
+    logger.info('Task 1')
     try:
         transaction_count = index + 1
         result = ai_prediction(x,user_id)
@@ -289,6 +293,8 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             current_process="ai_model"
         )
 
+    logger.info('Response:',response)    
+
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         'auth_group',
@@ -297,6 +303,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             'message': json.dumps(response.to_dict())
         }
     ) 
+
 
 # @shared_task(base = CustomRetry,queue = 'queue_1')
 # def chain_task(x,y,index,data_list):
