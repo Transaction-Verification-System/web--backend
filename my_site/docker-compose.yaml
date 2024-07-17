@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # db:
+  #   image: postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: admin@123
+  #     POSTGRES_DB: tivs
+  #   volumes:
+  #     - ./data/db:/var/lib/postgresql/data
+  #   ports:
+  #     - '5432:5432'
+  # redis:
+  #   image: redis
+  #   restart: always
+  #   ports:
+  #     - '6379:6379'
+  # web:
+  #   build: .
+  #   command: >
+  #     bash -c "python manage.py migrate &&
+  #              python manage.py runserver 0.0.0.0:8000"
+  #   volumes:
+  #     - .:/code
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - redis
+  #   env_file:
+  #     - ./.env
+  celery-beat:
+    build: .
+    command: celery -A my_site beat -l INFO
+    volumes:
+      - .:/code
+    # depends_on:
+    #   - redis
+    env_file:
+      - ./.env  
+  celery-worker:
+    build: .
+    command: celery -A my_site worker -Q queue_1,queue_2,queue_3 -l info
+    volumes:
+      - .:/code
+    # depends_on:
+    #   - redis
+    env_file:
+      - ./.env  
