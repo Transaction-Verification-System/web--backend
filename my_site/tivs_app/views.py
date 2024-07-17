@@ -27,8 +27,11 @@ from .tasks import chain_task,chain_task2
 from django.views.decorators.csrf import csrf_exempt,csrf_protect,ensure_csrf_cookie
 
 from django.utils.decorators import method_decorator
+import logging
+from celery import Celery
 
-
+app = Celery('my_site')
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -130,11 +133,12 @@ class UserDetailView(APIView):
             return Response({'error': 'Data not found'}, status=status.HTTP_404_NOT_FOUND)
         
 class TransactionView(APIView):
-    permission_classes = [permissions.IsAuthenticated,JWTTokenPermission]
-    print('T')
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super(TransactionView, self).dispatch(*args, **kwargs)
+
     @method_decorator(ensure_csrf_cookie)
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
@@ -142,19 +146,23 @@ class TransactionView(APIView):
             accepted_data = 0
             rejected_data = 0
             user_id = request.user.id
-            print('User ID:',user_id)
-            print(f'Accepted datas are {accepted_data} and {rejected_data}')
-            print('Data List',data_list)
+            logger.info(f'Initial Accepted data: {accepted_data}, Initial Rejected data: {rejected_data}')
+            logger.info(f'User ID: {user_id}')
+            logger.info(f'Data List: {data_list}')
+            print(f'Initial Accepted data: {accepted_data}, Initial Rejected data: {rejected_data}')
+            print(f'User ID: {user_id}')
+            print(f'Data List: {data_list}')
             try:
-                
-                first_data = data_list[0]
-                chain_task.apply_async((first_data,0, data_list , accepted_data, rejected_data,user_id), queue='queue_1')
-                return redirect('success')
-            except KeyError as e:
-                return Response({'error': f'Missing parameter: {str(e)}'}, status=400)
-            except ValueError:
-                return Response({'error': 'Invalid number format'}, status=400)
-
+                if data_list:
+                    first_data = data_list[0]
+                    chain_task.apply_async((first_data, 0, data_list, accepted_data, rejected_data, user_id), queue='queue_1')
+                else:
+                    raise ValueError('Empty data_list provided')
+                return redirect('success')  
+            except (KeyError, ValueError) as e:
+                return Response({'error': str(e)}, status=400)
+            except Exception as e:
+                return Response({'error': str(e)}, status=500)
         return render(request, 'tivs_app/index.html')
 
       
@@ -163,6 +171,7 @@ class TransactionView(APIView):
         permission = JWTTokenPermission()
         action = f'Transaction view has been accessed using jwt token.'
         user = request.user.username
+        print('User:',user)
         permission.get_notify(action,user, 'auth_group')
         return Response({'message':'Transaction View'})
 
