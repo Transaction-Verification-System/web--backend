@@ -11,7 +11,8 @@ urlpatterns = [
     path('text/', chat_view, name='chat'),
     path('task/',queue_result, name='queue'),
     path('success/',sucess,name='success'),
-    path('history/detail/<int:pk>/',UserDetailView.as_view(),name='user_detail'),
+    path('passed/detail/<int:pk>/',UserPassedDetailView.as_view(),name='user_detail'),
+    path('failed/detail/<int:pk>/',UserFailedDetailView.as_view(),name='user_detail'),
 ]
 
 
