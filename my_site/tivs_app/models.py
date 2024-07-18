@@ -56,7 +56,7 @@ class BlackListModel(models.Model):
     def __str__(self):
         return self.phone
 
-class CustomerData(models.Model):
+class PassedCustomerData(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     income = models.FloatField()
@@ -93,9 +93,100 @@ class CustomerData(models.Model):
     phone = models.CharField(max_length=15)
     verified = models.BooleanField()
     reason = models.CharField(max_length=255)
+    country = models.CharField(max_length=255)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return f"Customer Data: {self.id}"
+        return f"Passed Customer Data: {self.id}"
+
+class FailedCustomerData(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    income = models.FloatField()
+    name_email_similarity = models.FloatField()
+    prev_address_months_count = models.IntegerField()
+    current_address_months_count = models.IntegerField()
+    customer_age = models.IntegerField()
+    days_since_request = models.FloatField()
+    intended_balcon_amount = models.FloatField()
+    payment_type = models.CharField(max_length=255)
+    zip_count_4w = models.IntegerField()
+    velocity_6h = models.FloatField()
+    velocity_24h = models.FloatField()
+    velocity_4w = models.FloatField()
+    bank_branch_count_8w = models.IntegerField()
+    date_of_birth_distinct_emails_4w = models.IntegerField()
+    employment_status = models.CharField(max_length=255)
+    credit_risk_score = models.IntegerField()
+    email_is_free = models.IntegerField()
+    housing_status = models.CharField(max_length=255)
+    phone_home_valid = models.IntegerField()
+    phone_mobile_valid = models.IntegerField()
+    bank_months_count = models.IntegerField()
+    has_other_cards = models.IntegerField()
+    proposed_credit_limit = models.FloatField()
+    foreign_request = models.IntegerField()
+    source = models.CharField(max_length=255)
+    session_length_in_minutes = models.FloatField()
+    device_os = models.CharField(max_length=255)
+    keep_alive_session = models.IntegerField()
+    device_distinct_emails_8w = models.IntegerField()
+    device_fraud_count = models.IntegerField()
+    month = models.IntegerField()
+    phone = models.CharField(max_length=15)
+    verified = models.BooleanField()
+    reason = models.CharField(max_length=255)
+    country = models.CharField(max_length=255)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Failed Customer Data: {self.id}"    
+    
+class RePassedCustomerData(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    income = models.FloatField()
+    name_email_similarity = models.FloatField()
+    prev_address_months_count = models.IntegerField()
+    current_address_months_count = models.IntegerField()
+    customer_age = models.IntegerField()
+    days_since_request = models.FloatField()
+    intended_balcon_amount = models.FloatField()
+    payment_type = models.CharField(max_length=255)
+    zip_count_4w = models.IntegerField()
+    velocity_6h = models.FloatField()
+    velocity_24h = models.FloatField()
+    velocity_4w = models.FloatField()
+    bank_branch_count_8w = models.IntegerField()
+    date_of_birth_distinct_emails_4w = models.IntegerField()
+    employment_status = models.CharField(max_length=255)
+    credit_risk_score = models.IntegerField()
+    email_is_free = models.IntegerField()
+    housing_status = models.CharField(max_length=255)
+    phone_home_valid = models.IntegerField()
+    phone_mobile_valid = models.IntegerField()
+    bank_months_count = models.IntegerField()
+    has_other_cards = models.IntegerField()
+    proposed_credit_limit = models.FloatField()
+    foreign_request = models.IntegerField()
+    source = models.CharField(max_length=255)
+    session_length_in_minutes = models.FloatField()
+    device_os = models.CharField(max_length=255)
+    keep_alive_session = models.IntegerField()
+    device_distinct_emails_8w = models.IntegerField()
+    device_fraud_count = models.IntegerField()
+    month = models.IntegerField()
+    phone = models.CharField(max_length=15)
+    verified = models.BooleanField()
+    reason = models.CharField(max_length=255)
+    country = models.CharField(max_length=255)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Re-passed Customer Data: {self.id}"      
 
 class ErrorLogsModel(models.Model):
     id = models.AutoField(primary_key=True)
