@@ -9,6 +9,7 @@ from .rules import calculate_reputation_score,model_check
 from .serializers import *
 from django.utils import timezone
 from .utility import ISocketResponse
+from geopy.geocoders import Nominatim
 
 app = Celery('my_site')
 logger = logging.getLogger(__name__)
@@ -101,7 +102,15 @@ def ai_prediction(data,user_id):
 
         data['user'] = user_id
 
-        serializer = CustomerDataSerializer(data=data)
+        passed_serializer = PassedCustomerDataSerializer(data=data)
+        failed_serializer = FailedCustomerDataSerializer(data=data)
+
+        geolocator = Nominatim(user_agent='tivs_app')
+        location = geolocator.geocode(data['country'])
+
+        if location:
+            data['latitude'] = location.latitude
+            data['longitude'] = location.longitude
 
         if result == False:
             data['verified'] = False
@@ -114,17 +123,27 @@ def ai_prediction(data,user_id):
             logger.info('Customer data saved.')
 
 
-        if serializer.is_valid():
-            serializer.save(user_id=user_id)
+        # if serializer.is_valid():
+        #     serializer.save(user_id=user_id)
 
-            if result == False:
-                return 1
+        if result == False:
+            if failed_serializer.is_valid():
+                failed_serializer.save(user_id=user_id)
             else:
-                return 0
+                errors = failed_serializer.errors
+                logger.error(f'Failed Serializer errors: {errors}')
+                return {'errors': errors, 'AI Score': result}    
+            return 1
         else:
-            errors = serializer.errors
-            logger.error(f'Serializer errors: {errors}')
-            return {'errors': errors, 'AI Score': result}
+            if passed_serializer.is_valid():
+                passed_serializer.save(user_id=user_id)
+            else:
+                errors = passed_serializer.errors
+                logger.error(f'Passed Serializer errors: {errors}')
+                return {'errors': errors, 'AI Score': result}    
+
+            return 0
+        
     except Exception as exc:
         logger.error(f'Error in AI prediction: {exc}')
         raise exc    
@@ -150,10 +169,17 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
             #notification
             rejected_data += 1
 
-            serializer = CustomerDataSerializer(data=x)
+            serializer = FailedCustomerDataSerializer(data=x)
             x['user'] = user_id
             x['reason'] = 'Transaction Failed due to blacklist check.'
             x['verified'] = False
+
+            geolocator = Nominatim(user_agent='tivs_app')
+            location = geolocator.geocode(x['country'])
+
+            if location:
+                x['latitude'] = location.latitude
+                x['longitude'] = location.longitude
 
             if serializer.is_valid():
                 print('Transaction Valid')
@@ -191,10 +217,17 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
         if result == 1:
             #notification
 
-            serializer = CustomerDataSerializer(data=x)
+            serializer = FailedCustomerDataSerializer(data=x)
             x['user'] = user_id
             x['reason'] = 'Transaction Failed due to Reputation List check.'
             x['verified'] = False
+
+            geolocator = Nominatim(user_agent='tivs_app')
+            location = geolocator.geocode(x['country'])
+
+            if location:
+                x['latitude'] = location.latitude
+                x['longitude'] = location.longitude
 
             if serializer.is_valid():
                 print('Transaction Valid')
