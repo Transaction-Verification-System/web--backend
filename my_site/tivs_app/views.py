@@ -106,31 +106,68 @@ class UserView(APIView):
         user = request.user
         print('User',user)
         
-        customer_data_failed = CustomerData.objects.filter(user=user ,verified = False)
-        customer_data_passed = CustomerData.objects.filter(user=user,verified = True)
+        customer_data_failed = FailedCustomerData.objects.filter(user=user )
+        customer_data_passed = PassedCustomerData.objects.filter(user=user)
+        customer_data_repassed = RePassedCustomerData.objects.filter(user=user)
 
-        failed_serializer = CustomerDataSerializer(customer_data_failed, many=True)
-        passed_serializer = CustomerDataSerializer(customer_data_passed, many=True)
+        failed_serializer = FailedCustomerDataSerializer(customer_data_failed, many=True)
+        passed_serializer = PassedCustomerDataSerializer(customer_data_passed, many=True)
+        repassed_serializer = RePassedCustomerDataSerializer(customer_data_repassed, many=True)
 
         permission = AuthTokenPermission()
         action = f'User view has been accessed using auth token.'
         user = request.user.username
         permission.get_notify(action,user, 'auth_group')
-        return Response({'user':user,'message':'Home view accessed with auth token.','passed_customer_data': passed_serializer.data,'failed_customer_data':failed_serializer.data}, status=status.HTTP_200_OK)
+        return Response({'user':user,'message':'Home view accessed with auth token.','passed_customer_data': passed_serializer.data,'failed_customer_data':failed_serializer.data,'re_passed_customer_data': repassed_serializer.data}, status=status.HTTP_200_OK)
 
-class UserDetailView(APIView):
+class UserPassedDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self, request, pk):
         user = request.user
         try:
-            customer_data = CustomerData.objects.get(user=user,pk=pk)
-            serializer = CustomerDataSerializer(customer_data)
+            passed_customer_data = PassedCustomerData.objects.get(user=user,pk=pk)
+            serializer = PassedCustomerDataSerializer(passed_customer_data)
 
             return Response({'message': 'Data retrieved successfully.', 'Customer Data': serializer.data}, status=status.HTTP_200_OK)
 
-        except CustomerData.DoesNotExist:
+        except passed_customer_data.DoesNotExist:
             return Response({'error': 'Data not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class UserFailedDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self, request, pk):
+        user = request.user
+        try:
+            failed_customer_data = FailedCustomerData.objects.get(user=user,pk=pk)
+            serializer = FailedCustomerDataSerializer(failed_customer_data)
+
+            return Response({'message': 'Data retrieved successfully.', 'Customer Data': serializer.data}, status=status.HTTP_200_OK)
+
+        except FailedCustomerData.DoesNotExist:
+            return Response({'error': 'Data not found'}, status=status.HTTP_404_NOT_FOUND)        
+    def post(self, request, pk):
+        user = request.user
+        print('Hello Failed USer')
+        try:
+            failed_customer_data = FailedCustomerData.objects.get(user=user,pk=pk)
+            failed_customer_data.reason = 'Passed by Rechecking'
+            failed_customer_data.verified = True
+
+            failed_serializer = FailedCustomerDataSerializer(failed_customer_data)
+            passed_serializer = PassedCustomerDataSerializer(data=failed_serializer.data)
+            repassed_serializer = RePassedCustomerDataSerializer(data=failed_serializer.data)
+
+            if passed_serializer.is_valid() and repassed_serializer.is_valid():
+                passed_serializer.save()
+                repassed_serializer.save()
+                failed_customer_data.delete()
+                return Response({'message': 'Data updated successfully.', 'Customer Data': passed_serializer.data}, status=status.HTTP_200_OK)
+            else:
+                return Response({'passed_errors': passed_serializer.errors,'repassed_errors':repassed_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except FailedCustomerData.DoesNotExist:
+            return Response({'error': 'Data not found'}, status=status.HTTP_404_NOT_FOUND)    
         
 class TransactionView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
