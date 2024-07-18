@@ -3,5 +3,7 @@ from .models import *
 # Register your models here.
 admin.site.register(AppUser)
 admin.site.register(BlackListModel)
-admin.site.register(CustomerData)
+admin.site.register(FailedCustomerData)
+admin.site.register(PassedCustomerData)
+admin.site.register(RePassedCustomerData)
 admin.site.register(ErrorLogsModel)
