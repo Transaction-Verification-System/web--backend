@@ -37,7 +37,17 @@ class BlackListSerializer(serializers.ModelSerializer):
         model = BlackListModel
         fields = '__all__'
 
-class CustomerDataSerializer(serializers.ModelSerializer):
+class PassedCustomerDataSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CustomerData
+        model = PassedCustomerData
         fields = '__all__'
+
+class FailedCustomerDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FailedCustomerData
+        fields = '__all__'        
+
+class RePassedCustomerDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RePassedCustomerData
+        fields = '__all__'          
