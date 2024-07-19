@@ -10,6 +10,7 @@ from .serializers import *
 from django.utils import timezone
 from .utility import ISocketResponse
 from geopy.geocoders import Nominatim
+from .email import send_fail_mail
 
 app = Celery('my_site')
 logger = logging.getLogger(__name__)
@@ -17,18 +18,16 @@ logger = logging.getLogger(__name__)
 
 class CustomRetry(Task):
     autoretry_for = (Exception,)
-    retry_kwargs = {'max_retries':3}
+    retry_kwargs = {'max_retries': 3}
     retry_backoff = True
     retry_backoff_max = 60
     retry_jitter = True
-    
+
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         logger.error(f'Task {task_id} failed: {exc}')
         current_queue = self.request.delivery_info.get('routing_key')
         if current_queue == 'queue_1':
             new_queue = 'queue_2'
-        elif current_queue == 'queue_2':
-            new_queue = 'queue_1'
         elif current_queue == 'queue_2':
             new_queue = 'queue_3'
         else:
@@ -39,24 +38,33 @@ class CustomRetry(Task):
             logger.warning(f'Task {task_id} retrying in {new_queue}')
             raise self.retry(exc=exc, queue=new_queue)
         else:
-            logger.error(f'Task {task_id} has exceeded max retries. Giving up.')
+            logger.error(f'Task {task_id} has exceeded max retries. Logging error and proceeding to next transaction.')
 
 app.Task = CustomRetry
 
-def error_list(task_name,data,exc,user_id):
-    retries = CustomRetry.retry_kwargs['max_retires']
-    if retries > 0:
-        retries -= 1
+def error_list(task_name, data, exc, user_id):
+    ErrorLogsModel.objects.create(
+        task_name=task_name,
+        data=data,
+        error=str(exc),
+        timestamp=timezone.now(),
+        user_id=user_id
+    )
+    logger.info(f'Error task saved successfully for task: {task_name}')
 
-        raise CustomRetry.retry(exc=exc)
+def handle_retry_and_proceed(task_name, exc, task_instance, x, index, data_list, accepted_data, rejected_data, user_id,num):
+    logger.error(f'{task_name} failed: {exc}')
+    
+    if task_instance.request.retries >= task_instance.retry_kwargs['max_retries']:
+        error_list(task_name, x, exc, user_id)
+        if index + 1 < len(data_list):
+            next_data = data_list[index + 1]
+            index += 1
+            chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data, user_id)).apply_async(queue='queue_1')
+        else:
+            return f'{task_name} Engine Completed successfully.'
     else:
-        ErrorLogsModel.objects.create(
-            task_name=task_name,
-            data=data,
-            error=str(exc),
-            timestamp=timezone.now(),
-            user_id=user_id
-        )
+        chain(task_instance.s())
 
 def blacklist_task(data,user_id):
     try:
@@ -123,9 +131,6 @@ def ai_prediction(data,user_id):
             logger.info('Customer data saved.')
 
 
-        # if serializer.is_valid():
-        #     serializer.save(user_id=user_id)
-
         if result == False:
             if failed_serializer.is_valid():
                 failed_serializer.save(user_id=user_id)
@@ -156,6 +161,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
     
     try:
         transaction_count = index + 1
+        mail_transaction_id = 'txn'+str(transaction_count)
         result = blacklist_task(x,user_id)
         logger.info(f'Result: {result}')
         logger.info(f'Index Task1: {index}')
@@ -164,6 +170,8 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
 
         if result == 0:
             send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction)
+            time.sleep(3)
+
             chain(chain_task2.s(x, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_2')
         if result == 1:
             #notification
@@ -190,6 +198,10 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
                 logger.error(f'Serializer errors: {serializer.errors}')
 
             send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
+            time.sleep(3)
+
+            send_fail_mail(user_id,x['reason'],mail_transaction_id)
+
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
@@ -197,25 +209,25 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
             else:
                 return 'Black List Engine Completed successfully.'
     except Exception as exc:
-        logger.error(f'Task 1 failed: {exc}')
-        error_list('BlackList', x, exc,user_id)
-        raise exc
+        handle_retry_and_proceed('BlackList', exc, chain_task, x, index, data_list, accepted_data, rejected_data, user_id,1)
 
 @shared_task(base=CustomRetry, queue='queue_2')
 def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
     logger.info('Task 2')
     try:
         transaction_count = index + 1
+        mail_transaction_id = 'txn'+str(transaction_count)
         result = rules_engine(x,user_id)
         logger.info(f'Index Task2: {index}')
         is_last_transaction = index+1 == len(data_list)
         
         if result == 0:
             send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction)
+            time.sleep(3)
+
             chain(chain_task3.s(x, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_3')
         
         if result == 1:
-            #notification
 
             serializer = FailedCustomerDataSerializer(data=x)
             x['user'] = user_id
@@ -238,6 +250,10 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
                 logger.error(f'Serializer errors: {serializer.errors}')
 
             send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
+            time.sleep(3)
+
+            send_fail_mail(user_id,x['reason'],mail_transaction_id)
+
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
@@ -245,16 +261,16 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
             else:
                 return 'Rules Engine completed successfully.'
     except Exception as exc:
-        logger.error(f'Task 2 failed: {exc}')
-        error_list('Rules_Engine', x, exc,user_id)
-        raise exc
+        handle_retry_and_proceed('RulesEngine', exc, chain_task2, x, index, data_list, accepted_data, rejected_data, user_id,2)
 
 
 @shared_task(base=CustomRetry, queue='queue_3')
 def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
     logger.info('Task 1')
     try:
+        
         transaction_count = index + 1
+        mail_transaction_id = 'txn'+str(transaction_count)
         result = ai_prediction(x,user_id)
         logger.info(f'Index Task3: {index}')
         is_last_transaction = index+1 == len(data_list)
@@ -262,6 +278,8 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
         if result == 0:
             accepted_data += 1
             send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
+            time.sleep(3)
+
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
@@ -270,10 +288,13 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
                 return 'Rules Engine completed successfully.'
         
         if result == 1:
-            #notification
             rejected_data += 1
 
             send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
+            time.sleep(3)
+
+            send_fail_mail(user_id,x['reason'],mail_transaction_id)
+
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
@@ -281,9 +302,7 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
             else:
                 return 'AI Prediction completed successfully.'
     except Exception as exc:
-        logger.error(f'Task 2 failed: {exc}')
-        error_list('AI Prediction', x, exc,user_id)
-        raise exc
+        handle_retry_and_proceed('AI', exc, chain_task3, x, index, data_list, accepted_data, rejected_data, user_id,2)
 
 def send_message_channel(result,task_name,transaction_count,accepted_data,data_list,rejected_data,index,is_last_transaction=False):
     if task_name == 'rules_engine':
