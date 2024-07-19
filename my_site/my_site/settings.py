@@ -266,6 +266,14 @@ CELERY_TASK_ROUTES = {
     'tivs_app.tasks.chain_task3':{'queue':'queue_3'},
 }
 
+#Email Settings
+
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
 # CELERY_BEAT_SCHEDULE = {
 #     'scheduled_tasks':{
