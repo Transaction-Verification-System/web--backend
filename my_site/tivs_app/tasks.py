@@ -35,7 +35,7 @@ def error_list(x,user_id,task_name):
         logger.error(f'Serializer Error: {serializer.errors}')
         logger.error(f'Error task failed to save for task: {task_name}')
 
-def handle_retry_and_proceed(task_name, exc, task_instance, x, index, data_list, accepted_data, rejected_data, user_id, num):
+def handle_retry_and_proceed(task_name, exc, task_instance, x, index, data_list, accepted_data, rejected_data, user_id):
     logger.error(f'{task_name} handle failed: {exc}')
     
     if exc:
@@ -90,6 +90,7 @@ def rules_engine(data,user_id):
 def ai_prediction(data,user_id):
     try:
         result = banking_fraud_model_check(data)
+        aml_result = False if aml_model(data)==0 else True
 
         data['user'] = user_id
 
@@ -107,17 +108,6 @@ def ai_prediction(data,user_id):
             data['latitude'] = location.latitude
             data['longitude'] = location.longitude
 
-        # if result == 0:
-        #     data['verified'] = False
-        #     data['reason'] = 'Transaction Failed due to AI model prediction.'
-        #     logger.info('Transaction failed due to AI model prediction.')        
-
-        # else:
-        #     data['verified'] = True
-        #     data['reason'] = 'Transaction Successful.'
-        #     logger.info('Customer data saved.')
-
-
         if result == True:
             data['verified'] = False
             data['reason'] = 'Transaction Failed due to AI model prediction.'
@@ -128,8 +118,9 @@ def ai_prediction(data,user_id):
                 errors = failed_serializer.errors
                 logger.error(f'Failed Serializer errors: {errors}')
                 return {'errors': errors, 'AI Score': result}    
-            return 1
+            return 1,False
         else:
+            data['aml_risk'] = aml_result
             data['verified'] = True
             data['reason'] = 'Transaction Successful.'
             logger.info('Customer data saved.')
@@ -140,48 +131,20 @@ def ai_prediction(data,user_id):
                 logger.error(f'Passed Serializer errors: {errors}')
                 return {'errors': errors, 'AI Score': result}    
 
-            return 0
+            return 0,aml_result
         
     except Exception as exc:
         logger.error(f'Error in AI prediction: {exc}')
-        raise exc    
-
-def aml_prediction(data,user_id):
-    try:
-        result = aml_model(data)
-
-        data['user'] = user_id
-
-        passed_serializer = PassedCustomerDataSerializer(data=data)
-
-
-        if result == 0:
-            data['aml_risk'] = False
-            if passed_serializer.is_valid():
-                passed_serializer.save(user_id = user_id)
-            logger.info('Transaction failed due to AI model prediction.') 
-
-            return True       
-
-        else:
-            data['aml_risk'] = True
-            if passed_serializer.is_valid():
-                passed_serializer.save(user_id = user_id)
-            logger.info('Transaction failed due to AI model prediction.') 
-
-            return False   
-    except Exception as exc:
-        raise exc    
+        raise exc        
 
 
 
 
 @shared_task(queue='queue_1')
-def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
+def chain_task(x, index, data_list, accepted_data, rejected_data,user_id,type):
     logger.info('Task 1')
     
     try:
-        # transaction_count = index + 1
         transaction_count = redis_client.incr(f'transaction_count_{user_id}')
         mail_transaction_id = 'txn'+str(transaction_count)
         result = blacklist_task(x,user_id)
@@ -194,9 +157,8 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
             send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction,aml_result=False)
             time.sleep(3)
 
-            chain(chain_task2.s(x, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_2')
+            chain(chain_task2.s(x, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_2')
         if result == 1:
-            #notification
             rejected_data += 1
 
             serializer = FailedCustomerDataSerializer(data=x)
@@ -227,19 +189,18 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
-                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_1')
+                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_1')
             else:
                 return 'Black List Engine Completed successfully.'
     except Exception as exc:
         logger.error(f'KeyError in chain_task: {exc}')
-        handle_retry_and_proceed('BlackList', exc, chain_task, x, index, data_list, accepted_data, rejected_data, user_id,1)
+        handle_retry_and_proceed('BlackList', exc, chain_task, x, index, data_list, accepted_data, rejected_data, user_id)
         # raise exc
 
 @shared_task( queue='queue_2')
-def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
+def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id,type):
     logger.info('Task 2')
     try:
-        # transaction_count = index + 1
         transaction_count = redis_client.incr(f'transaction_count_{user_id}')
         mail_transaction_id = 'txn'+str(transaction_count)
         result = rules_engine(x,user_id)
@@ -250,7 +211,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
             send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction,aml_result=False)
             time.sleep(3)
 
-            chain(chain_task3.s(x, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_3')
+            chain(chain_task3.s(x, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_3')
         
         if result == 1:
 
@@ -282,12 +243,12 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
-                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_1')
+                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_1')
             else:
                 return 'Rules Engine completed successfully.'
     except Exception as exc:
         logger.error(f'KeyError in chain_task: {exc}')
-        handle_retry_and_proceed('RulesEngine', exc, chain_task2, x, index, data_list, accepted_data, rejected_data, user_id,2)
+        handle_retry_and_proceed('RulesEngine', exc, chain_task2, x, index, data_list, accepted_data, rejected_data, user_id)
         # raise exc
 
 
@@ -295,17 +256,15 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
 def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
     logger.info('Task 1')
     try:
-        aml_result = False
-        # transaction_count = index + 1
         transaction_count = redis_client.incr(f'transaction_count_{user_id}')
         mail_transaction_id = 'txn'+str(transaction_count)
-        result = ai_prediction(x,user_id)
+        result,aml_result = ai_prediction(x,user_id)
         
         logger.info(f'Index Task3: {index}')
         is_last_transaction = index+1 == len(data_list)
         
         if result == 0:
-            aml_result = aml_prediction(x,user_id)
+            
             accepted_data += 1
             send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result)
             time.sleep(3)
@@ -313,7 +272,7 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
-                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_1')
+                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_1')
             else:
                 return 'Rules Engine completed successfully.'
         
@@ -328,12 +287,12 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
             if index + 1 < len(data_list):
                 next_data = data_list[index + 1]
                 index += 1
-                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_1')
+                chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_1')
             else:
                 return 'AI Prediction completed successfully.'
     except Exception as exc:
         logger.error(f'KeyError in chain_task: {exc}')
-        handle_retry_and_proceed('AI', exc, chain_task3, x, index, data_list, accepted_data, rejected_data, user_id,2)
+        handle_retry_and_proceed('AI', exc, chain_task3, x, index, data_list, accepted_data, rejected_data, user_id)
         # raise exc
 
 def send_message_channel(result,task_name,transaction_count,accepted_data,data_list,rejected_data,index,is_last_transaction=False,aml_result=False):
