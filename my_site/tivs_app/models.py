@@ -276,6 +276,8 @@ class CreditCardPassedModel(models.Model):
     phone = models.CharField(max_length=245)
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
+    aml_risk = models.BooleanField(default=False, blank=True) 
+
 
 
     def __str__(self):
@@ -317,6 +319,8 @@ class CreditCardFailedModel(models.Model):
     phone = models.CharField(max_length=245)
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
+    aml_risk = models.BooleanField(default=False, blank=True) 
+
 
 
 
@@ -360,6 +364,8 @@ class CreditRePassedModel(models.Model):
     phone = models.CharField(max_length=245)
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
+    aml_risk = models.BooleanField(default=False, blank=True) 
+
 
 
 
@@ -402,6 +408,9 @@ class CreditCardErrorLogModel(models.Model):
     phone = models.CharField(max_length=245)
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
+    aml_risk = models.BooleanField(default=False, blank=True) 
+
+
 
 
 
@@ -441,6 +450,8 @@ class ECommercePassedModel(models.Model):
     phone = models.CharField(max_length=245)
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
+    aml_risk = models.BooleanField(default=False, blank=True) 
+
 
     def __str__(self):
         return f"Ecommerce Passed: {self.id}: {self.total_transaction_amt} total amount"        
@@ -478,6 +489,8 @@ class ECommerceFailedModel(models.Model):
     phone = models.CharField(max_length=245)
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
+    aml_risk = models.BooleanField(default=False, blank=True) 
+
 
     def __str__(self):
         return f"Ecommerce Failed: {self.id}: {self.total_transaction_amt} total amount"  
@@ -515,6 +528,8 @@ class ECommerceRePassedModel(models.Model):
     phone = models.CharField(max_length=245)
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
+    aml_risk = models.BooleanField(default=False, blank=True) 
+
 
     def __str__(self):
         return f"Ecommerce RePassed: {self.id}: {self.total_transaction_amt} total amount"  
@@ -552,6 +567,9 @@ class ECommerceErrorModel(models.Model):
     phone = models.CharField(max_length=245)
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
+    aml_risk = models.BooleanField(default=False, blank=True) 
+
+
 
     def __str__(self):
         return f"Ecommerce ErrorLog: {self.id}: {self.total_transaction_amt} total amount"  
