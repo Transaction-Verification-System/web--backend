@@ -11,60 +11,84 @@ from django.utils import timezone
 from .utility import ISocketResponse
 from geopy.geocoders import Nominatim
 from .email import send_fail_mail
+import redis
 
 app = Celery('my_site')
 logger = logging.getLogger(__name__)
 
+redis_client = redis.StrictRedis(host='localhost',port=6379,db=0)
 
-class CustomRetry(Task):
-    autoretry_for = (Exception,)
-    retry_kwargs = {'max_retries': 3}
-    retry_backoff = True
-    retry_backoff_max = 60
-    retry_jitter = True
 
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        logger.error(f'Task {task_id} failed: {exc}')
-        current_queue = self.request.delivery_info.get('routing_key')
-        if current_queue == 'queue_1':
-            new_queue = 'queue_2'
-        elif current_queue == 'queue_2':
-            new_queue = 'queue_3'
-        else:
-            logger.error(f'Unknown Task {task_id} retrying in queue. Skipping.')
-            return None
+# class CustomRetry(Task):
+#     autoretry_for = (Exception,)
+#     retry_kwargs = {'max_retries': 3}
+#     retry_backoff = True
+#     retry_backoff_max = 60
+#     retry_jitter = True
 
-        if self.request.retries < self.retry_kwargs['max_retries']:
-            logger.warning(f'Task {task_id} retrying in {new_queue}')
-            raise self.retry(exc=exc, queue=new_queue)
-        else:
-            logger.error(f'Task {task_id} has exceeded max retries. Logging error and proceeding to next transaction.')
+#     def on_failure(self, exc, task_id, args, kwargs, einfo):
+#         logger.error(f'Task {task_id} failed: {exc}')
+#         current_queue = self.request.delivery_info.get('routing_key')
+#         if current_queue == 'queue_1':
+#             new_queue = 'queue_2'
+#         elif current_queue == 'queue_2':
+#             new_queue = 'queue_3'
+#         else:
+#             logger.error(f'Unknown Task {task_id} retrying in queue. Skipping.')
+#             return None
 
-app.Task = CustomRetry
+#         if self.request.retries < self.retry_kwargs['max_retries']:
+#             logger.warning(f'Task {task_id} retrying in {new_queue}')
+#             raise self.retry(exc=exc, queue=new_queue)
+#         else:
+#             logger.error(f'Task {task_id} has exceeded max retries. Logging error and proceeding to next transaction.')
+#             self.handle_retry_and_proceed()
 
-def error_list(task_name, data, exc, user_id):
-    ErrorLogsModel.objects.create(
-        task_name=task_name,
-        data=data,
-        error=str(exc),
-        timestamp=timezone.now(),
-        user_id=user_id
-    )
-    logger.info(f'Error task saved successfully for task: {task_name}')
+# app.Task = CustomRetry
 
-def handle_retry_and_proceed(task_name, exc, task_instance, x, index, data_list, accepted_data, rejected_data, user_id,num):
-    logger.error(f'{task_name} failed: {exc}')
+def error_list(x,user_id,task_name):
+    logger.info('I am in Error Log Model.')
+    serializer = ErrorSerializer(data=x)
+
+    x['user'] = user_id
+    x['reason'] = f'Transaction Failed due to System Failure in {task_name}.'
+    x['timestamp'] = timezone.now()
+    x['verified'] = False
+
+    if serializer.is_valid():
+        serializer.save(user_id=user_id)
+        logger.info(f'Error task saved successfully for task: {task_name}')
+    else:
+        logger.error(f'Serializer Error: {serializer.errors}')
+        logger.error(f'Error task failed to save for task: {task_name}')
+
+def handle_retry_and_proceed(task_name, exc, task_instance, x, index, data_list, accepted_data, rejected_data, user_id, num):
+    logger.error(f'{task_name} handle failed: {exc}')
     
-    if task_instance.request.retries >= task_instance.retry_kwargs['max_retries']:
-        error_list(task_name, x, exc, user_id)
+    if exc:
+        error_list(x,user_id,task_name)
+        
         if index + 1 < len(data_list):
             next_data = data_list[index + 1]
             index += 1
             chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data, user_id)).apply_async(queue='queue_1')
         else:
             return f'{task_name} Engine Completed successfully.'
-    else:
-        chain(task_instance.s())
+    # else:
+    #     if task_instance == chain_task:
+    #         logger.warning(f'Retrying {task_name} in queue_1')
+    #         chain(task_instance.s(x, index, data_list, accepted_data, rejected_data, user_id)).apply_async(queue='queue_1')
+    #     elif task_instance == chain_task2:
+    #         logger.warning(f'Retrying {task_name} in queue_2')
+    #         chain(task_instance.s(x, index, data_list, accepted_data, rejected_data, user_id)).apply_async(queue='queue_2')    
+    #     elif task_instance == chain_task3:
+    #         logger.warning(f'Retrying {task_name} in queue_3')
+    #         chain(task_instance.s(x, index, data_list, accepted_data, rejected_data, user_id)).apply_async(queue='queue_3')
+    #     else:
+    #         logger.error(f'Unknown task {task_name} encountered. Skipping retry.')
+    #         return None
+   
+
 
 def blacklist_task(data,user_id):
     try:
@@ -155,12 +179,13 @@ def ai_prediction(data,user_id):
 
 
 
-@shared_task(base=CustomRetry, queue='queue_1')
+@shared_task(queue='queue_1')
 def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
     logger.info('Task 1')
     
     try:
-        transaction_count = index + 1
+        # transaction_count = index + 1
+        transaction_count = redis_client.incr(f'transaction_count_{user_id}')
         mail_transaction_id = 'txn'+str(transaction_count)
         result = blacklist_task(x,user_id)
         logger.info(f'Result: {result}')
@@ -209,13 +234,16 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
             else:
                 return 'Black List Engine Completed successfully.'
     except Exception as exc:
+        logger.error(f'KeyError in chain_task: {exc}')
         handle_retry_and_proceed('BlackList', exc, chain_task, x, index, data_list, accepted_data, rejected_data, user_id,1)
+        # raise exc
 
-@shared_task(base=CustomRetry, queue='queue_2')
+@shared_task( queue='queue_2')
 def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
     logger.info('Task 2')
     try:
-        transaction_count = index + 1
+        # transaction_count = index + 1
+        transaction_count = redis_client.incr(f'transaction_count_{user_id}')
         mail_transaction_id = 'txn'+str(transaction_count)
         result = rules_engine(x,user_id)
         logger.info(f'Index Task2: {index}')
@@ -261,15 +289,18 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
             else:
                 return 'Rules Engine completed successfully.'
     except Exception as exc:
+        logger.error(f'KeyError in chain_task: {exc}')
         handle_retry_and_proceed('RulesEngine', exc, chain_task2, x, index, data_list, accepted_data, rejected_data, user_id,2)
+        # raise exc
 
 
-@shared_task(base=CustomRetry, queue='queue_3')
+@shared_task(queue='queue_3')
 def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
     logger.info('Task 1')
     try:
         
-        transaction_count = index + 1
+        # transaction_count = index + 1
+        transaction_count = redis_client.incr(f'transaction_count_{user_id}')
         mail_transaction_id = 'txn'+str(transaction_count)
         result = ai_prediction(x,user_id)
         logger.info(f'Index Task3: {index}')
@@ -302,7 +333,9 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
             else:
                 return 'AI Prediction completed successfully.'
     except Exception as exc:
+        logger.error(f'KeyError in chain_task: {exc}')
         handle_retry_and_proceed('AI', exc, chain_task3, x, index, data_list, accepted_data, rejected_data, user_id,2)
+        # raise exc
 
 def send_message_channel(result,task_name,transaction_count,accepted_data,data_list,rejected_data,index,is_last_transaction=False):
     if task_name == 'rules_engine':
@@ -316,7 +349,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
             percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
-            current_process = "rules_engine"
+            current_process = "ai_model"
         )
     elif task_name == 'black_list':
         response = ISocketResponse(
@@ -329,7 +362,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
             percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
-            current_process="black_list"
+            current_process="rules_engine"
         )
     else:
         response = ISocketResponse(
@@ -342,7 +375,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
             percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
-            current_process="ai_model"
+            current_process="black_list"
         )
 
     logger.info('Response:',response)    
