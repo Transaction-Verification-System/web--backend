@@ -40,6 +40,9 @@ urlpatterns = [
     path('insights/fraud/source/',SourceCountView.as_view(),name='source_device'),
     path('insights/aml/source/',AMLSourceCountView.as_view(),name='aml_source_count'),
 
+    path('insights/fraud/type/',TypeCountView.as_view(),name='type_count'),
+    path('insights/aml/type/',AMLTypeCountView.as_view(),name='aml_type_count'),
+
 ]
 
 
