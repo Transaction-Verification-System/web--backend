@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Failed Transaction Alert</title>
+    <style>
+        .email-container {
+            font-family: Arial, sans-serif;
+            width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .email-header, .email-footer {
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 10px;
+        }
+        .email-content {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>TIVS Notification</h1>
+        </div>
+        <div class="email-content">
+            <h1>Hello, <strong>{{ user }}</strong></h1>
+            <p>Transaction ID: <strong>{{ transaction }}</strong></p>
+            <p>Failed Reason: <strong>{{ statement }}</strong></p>
+            <p>Please review and take appropriate action.</p>
+        </div>
+        <div class="email-footer">
+            <p>&copy; 2024 TIVS. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
