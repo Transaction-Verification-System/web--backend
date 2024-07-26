@@ -37,6 +37,9 @@ urlpatterns = [
     path('insights/fraud/housing/',HousingCountView.as_view(),name='housing_device'),
     path('insights/aml/housing/',AMLHousingCountView.as_view(),name='aml_housing_count'),
 
+    path('insights/fraud/source/',SourceCountView.as_view(),name='source_device'),
+    path('insights/aml/source/',AMLSourceCountView.as_view(),name='aml_source_count'),
+
 ]
 
 
