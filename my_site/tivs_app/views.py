@@ -25,7 +25,6 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework import status,permissions
 from .tasks import chain_task,chain_task2
 from django.views.decorators.csrf import csrf_exempt,csrf_protect,ensure_csrf_cookie
-
 from django.utils.decorators import method_decorator
 import logging
 from celery import Celery
