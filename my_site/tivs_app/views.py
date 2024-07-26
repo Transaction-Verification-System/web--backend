@@ -558,3 +558,40 @@ class AMLHousingCountView(APIView):
         response = aml_risk_true_counts
         
         return Response(response)        
+    
+
+class SourceCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+        status_counts = FailedCustomerData.objects.values('source').annotate(count=Count('source'))
+        
+        result = {item['source']: item['count'] for item in status_counts}
+        
+        return Response(result)
+    
+class AMLSourceCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+    
+        models = [
+            ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData
+        ]
+        
+        aml_risk_true_counts = {}
+        
+        for model in models:
+            true_counts = model.objects.filter(aml_risk=True).values('source').annotate(count=Count('source'))
+            for entry in true_counts:
+                status = entry['source']
+                count = entry['count']
+                if status in aml_risk_true_counts:
+                    aml_risk_true_counts[status] += count
+                else:
+                    aml_risk_true_counts[status] = count
+            
+
+        response = aml_risk_true_counts
+        
+        return Response(response)            
