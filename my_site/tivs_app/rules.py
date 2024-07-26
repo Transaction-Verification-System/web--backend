@@ -62,6 +62,84 @@ def calculate_reputation_score(data):
 
     return score
 
+def calculate_ecommerce_rules_score(data):
+    score = 0
+
+    # Positive Indicators
+    if data['No_Transactions'] > 50:
+        score += 10
+    if data['No_Orders'] > 40:
+        score += 10
+    if data['No_Payments'] > 30:
+        score += 10
+    if data['Total_transaction_amt'] > 10000:
+        score += 20
+    if data['No_transactionsFail'] < 5:
+        score += 5
+    if data['PaymentRegFail'] < 2:
+        score += 5
+    if data['OrdersFulfilled'] > 50:
+        score += 10
+    if data['OrdersPending'] < 10:
+        score += 5
+    if data['OrdersFailed'] < 5:
+        score += 5
+    if data['Duplicate_IP'] == 0:
+        score += 5
+    if data['Duplicate_Address'] == 0:
+        score += 5
+
+    # Negative Indicators
+    if data['No_Transactions'] < 10:
+        score -= 10
+    if data['No_Orders'] < 10:
+        score -= 10
+    if data['No_Payments'] < 10:
+        score -= 10
+    if data['Total_transaction_amt'] < 1000:
+        score -= 20
+    if data['No_transactionsFail'] > 10:
+        score -= 10
+    if data['PaymentRegFail'] > 5:
+        score -= 10
+    if data['OrdersFulfilled'] < 20:
+        score -= 10
+    if data['OrdersPending'] > 20:
+        score -= 5
+    if data['OrdersFailed'] > 20:
+        score -= 10
+    if data['Duplicate_IP'] > 1:
+        score -= 5
+    if data['Duplicate_Address'] > 1:
+        score -= 5
+    if data['JCB_16'] > 10:
+        score -= 5
+    if data['AmericanExp'] > 5:
+        score -= 5
+    if data['VISA_16'] > 30:
+        score -= 5
+    if data['Discover'] > 3:
+        score -= 5
+    if data['Voyager'] > 0:
+        score -= 5
+    if data['VISA_13'] > 10:
+        score -= 5
+    if data['Maestro'] > 5:
+        score -= 5
+    if data['Mastercard'] > 20:
+        score -= 5
+    if data['DC_CB'] > 3:
+        score -= 5
+    if data['JCB_15'] > 1:
+        score -= 5
+
+    # Additional indicators
+    if data.get('verified', False):
+        score += 10
+    if "suspicious" in data.get('reason', '').lower():
+        score -= 10
+
+    return score
 
 def banking_fraud_model_check(data):
 
@@ -107,6 +185,72 @@ def aml_model(data):
     print("Status Code:", response.status_code)
     print("Response Body:", response.json())
 
-    print('Status:',data["isLaundering"])
+    print('Status:',data['isLaundering'])
 
-    return data["isLaundering"]
+    return data['isLaundering']
+
+
+def credit_card_model(data):
+    required_fields = ["time","amount","v1","v2","v3","v4","v5","v6","v7","v8","v9","v10","v11","v12","v13","v14","v15","v16","v17","v18","v19","v20","v21","v22","v23","v24","v25","v26","v27","v28"]
+
+
+    filtered_data = {key: data[key] for key in required_fields if key in data}
+
+
+    url = 'https://model-backend-qys8.onrender.com/credit-fraud/predict'
+
+    response = requests.post(url, json=filtered_data)
+
+    data = response.json()
+    print("Status Code:", response.status_code)
+    print("Response Body:", response.json())
+
+    print('Status:',data["isFraud"])
+
+    return data["isFraud"]
+
+def ecommerce_model(data):
+    required_fields = [
+    "No_Transactions",
+    "No_Orders",
+    "No_Payments",
+    "Total_transaction_amt",
+    "No_transactionsFail",
+    "PaymentRegFail",
+    "PaypalPayments",
+    "ApplePayments",
+    "CardPayments",
+    "BitcoinPayments",
+    "OrdersFulfilled",
+    "OrdersPending",
+    "OrdersFailed",
+    "Trns_fail_order_fulfilled",
+    "Duplicate_IP",
+    "Duplicate_Address",
+    "JCB_16",
+    "AmericanExp",
+    "VISA_16",
+    "Discover",
+    "Voyager",
+    "VISA_13",
+    "Maestro",
+    "Mastercard",
+    "DC_CB",
+    "JCB_15"
+]
+    filtered_data = {key: data[key] for key in required_fields if key in data}
+
+
+    url = 'https://model-backend-qys8.onrender.com/ecommerce_fraud/predict'
+
+    response = requests.post(url, json=filtered_data)
+
+    data = response.json()
+    print("Status Code:", response.status_code)
+    print("Response Body:", response.json())
+
+    print('Status:',data["isFraud"])
+
+
+    return data["isFraud"]
+

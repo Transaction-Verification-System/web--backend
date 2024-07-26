@@ -232,3 +232,190 @@ def queue_result(request):
 
 def sucess(request):
     return render(request, 'tivs_app/success.html')
+
+
+class CreditCardView(APIView):
+    permission_classes = [permissions.IsAuthenticated,JWTTokenPermission]
+    
+
+    def get(self, request):
+        user = request.user
+        print('User',user)
+        
+        customer_data_failed = CreditCardFailedModel.objects.filter(user=user )
+        customer_data_passed = CreditCardPassedModel.objects.filter(user=user)
+        customer_data_repassed = CreditRePassedModel.objects.filter(user=user)
+
+        failed_serializer = CreditCardFailedSerializer(customer_data_failed, many=True)
+        passed_serializer = CreditCardPassedSerializer(customer_data_passed, many=True)
+        repassed_serializer = CreditCardRepassedSerializer(customer_data_repassed, many=True)
+
+        permission = AuthTokenPermission()
+        action = f'User view has been accessed using auth token.'
+        user = request.user.username
+        permission.get_notify(action,user, 'auth_group')
+        return Response({'user':user,'message':'Home view accessed with auth token.','credit_passed_customer_data': passed_serializer.data,'credit_failed_customer_data':failed_serializer.data,'credit_re_passed_customer_data': repassed_serializer.data}, status=status.HTTP_200_OK)
+
+class CreditCardPassedDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self, request, pk):
+        user = request.user
+        try:
+            passed_customer_data = CreditCardPassedModel.objects.get(user=user,pk=pk)
+            serializer = CreditCardPassedSerializer(passed_customer_data)
+
+            return Response({'message': 'Data retrieved successfully.', 'Credit Card Passed Customer Data': serializer.data}, status=status.HTTP_200_OK)
+
+        except passed_customer_data.DoesNotExist:
+            return Response({'error': 'Credit Card Customer Data not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class CreditCardFailedDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self, request, pk):
+        user = request.user
+        try:
+            failed_customer_data = CreditCardFailedModel.objects.get(user=user,pk=pk)
+            serializer = CreditCardFailedSerializer(failed_customer_data)
+
+            return Response({'message': 'Data retrieved successfully.', 'Credit Card Failed Customer Data': serializer.data}, status=status.HTTP_200_OK)
+
+        except CreditCardFailedModel.DoesNotExist:
+            return Response({'error': 'Credit Card Failed Customer Data not found'}, status=status.HTTP_404_NOT_FOUND)        
+    def post(self, request, pk):
+        user = request.user
+        print('Hello Failed USer')
+        try:
+            failed_customer_data = CreditCardFailedModel.objects.get(user=user,pk=pk)
+            failed_customer_data.reason = 'Passed by Rechecking'
+            failed_customer_data.verified = True
+
+            failed_serializer = CreditCardFailedSerializer(failed_customer_data)
+            passed_serializer = CreditCardPassedSerializer(data=failed_serializer.data)
+            repassed_serializer = CreditCardRepassedSerializer(data=failed_serializer.data)
+
+            if passed_serializer.is_valid() and repassed_serializer.is_valid():
+                passed_serializer.save()
+                repassed_serializer.save()
+                failed_customer_data.delete()
+                return Response({'message': 'Data updated successfully.', 'Credit Card Passed Customer Data': passed_serializer.data}, status=status.HTTP_200_OK)
+            else:
+                return Response({'credit_card_passed_errors': passed_serializer.errors,'credit_card_repassed_errors':repassed_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except CreditCardFailedModel.DoesNotExist:
+            return Response({'error': 'Data not found'}, status=status.HTTP_404_NOT_FOUND)   
+        
+
+
+class EcommerceView(APIView):
+    permission_classes = [permissions.IsAuthenticated,JWTTokenPermission]
+    
+
+    def get(self, request):
+        user = request.user
+        print('User',user)
+        
+        customer_data_failed = ECommerceFailedModel.objects.filter(user=user )
+        customer_data_passed = ECommercePassedModel.objects.filter(user=user)
+        customer_data_repassed = ECommerceRePassedModel.objects.filter(user=user)
+
+        failed_serializer = EcommerceFailedSerializer(customer_data_failed, many=True)
+        passed_serializer = EcommercePassedSerializer(customer_data_passed, many=True)
+        repassed_serializer = EcommerceRepassedSerializer(customer_data_repassed, many=True)
+
+        permission = AuthTokenPermission()
+        action = f'User view has been accessed using auth token.'
+        user = request.user.username
+        permission.get_notify(action,user, 'auth_group')
+        return Response({'user':user,'message':'Home view accessed with auth token.','ecom_passed_customer_data': passed_serializer.data,'ecom_failed_customer_data':failed_serializer.data,'ecom_re_passed_customer_data': repassed_serializer.data}, status=status.HTTP_200_OK)
+
+class EcommercePassedDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self, request, pk):
+        user = request.user
+        try:
+            passed_customer_data = ECommercePassedModel.objects.get(user=user,pk=pk)
+            serializer = EcommercePassedSerializer(passed_customer_data)
+
+            return Response({'message': 'Data retrieved successfully.', 'Ecommerce Passed Customer Data': serializer.data}, status=status.HTTP_200_OK)
+
+        except passed_customer_data.DoesNotExist:
+            return Response({'error': 'Ecommerce Customer Data not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class EcommerceFailedDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self, request, pk):
+        user = request.user
+        try:
+            failed_customer_data = ECommerceFailedModel.objects.get(user=user,pk=pk)
+            serializer = EcommerceFailedSerializer(failed_customer_data)
+
+            return Response({'message': 'Data retrieved successfully.', 'Ecommerce Failed Customer Data': serializer.data}, status=status.HTTP_200_OK)
+
+        except ECommerceFailedModel.DoesNotExist:
+            return Response({'error': 'Credit Card Failed Customer Data not found'}, status=status.HTTP_404_NOT_FOUND)        
+    def post(self, request, pk):
+        user = request.user
+        print('Hello Failed USer')
+        try:
+            failed_customer_data = ECommerceFailedModel.objects.get(user=user,pk=pk)
+            failed_customer_data.reason = 'Passed by Rechecking'
+            failed_customer_data.verified = True
+
+            failed_serializer = EcommerceFailedSerializer(failed_customer_data)
+            passed_serializer = EcommercePassedSerializer(data=failed_serializer.data)
+            repassed_serializer = EcommerceRepassedSerializer(data=failed_serializer.data)
+
+            if passed_serializer.is_valid() and repassed_serializer.is_valid():
+                passed_serializer.save()
+                repassed_serializer.save()
+                failed_customer_data.delete()
+                return Response({'message': 'Data updated successfully.', 'Ecommerce Passed Customer Data': passed_serializer.data}, status=status.HTTP_200_OK)
+            else:
+                return Response({'ecommerce_passed_errors': passed_serializer.errors,'ecommerce_repassed_errors':repassed_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except ECommerceFailedModel.DoesNotExist:
+            return Response({'error': 'Data not found'}, status=status.HTTP_404_NOT_FOUND)           
+        
+from django.db.models import Count
+
+class EmploymentCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+        status_counts = FailedCustomerData.objects.values('employment_status').annotate(count=Count('employment_status'))
+        
+        result = {item['employment_status']: item['count'] for item in status_counts}
+        
+        return Response(result)
+
+class AMLEmploymentCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+        aml_risk_counts = {'True': 0, 'False': 0}
+    
+        models = [
+            ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData
+        ]
+        
+        aml_risk_true_counts = {}
+        aml_risk_false_counts = {}
+        
+        for model in models:
+            # Count unique employment_status values where aml_risk=True
+            true_counts = model.objects.filter(aml_risk=True).values('employment_status').annotate(count=Count('employment_status'))
+            for entry in true_counts:
+                status = entry['employment_status']
+                count = entry['count']
+                if status in aml_risk_true_counts:
+                    aml_risk_true_counts[status] += count
+                else:
+                    aml_risk_true_counts[status] = count
+            
+
+        # Prepare the response
+        response = aml_risk_true_counts
+        
+        return Response(response)
