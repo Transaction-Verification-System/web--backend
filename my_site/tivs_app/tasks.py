@@ -345,10 +345,10 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             current_transaction_id = "txn"+str(transaction_count), 
             next_transaction_id = 'None' if is_last_transaction else "txn"+str(transaction_count+1), 
             total_transactions_checked = index,  
-            total_transactions_left = len(data_list)-transaction_count,  
+            total_transactions_left = len(data_list)-index,   
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
-            percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
+            percentage_of_transactions_processed = round((index/len(data_list))*100),  
             current_process = "ai_model"
         )
     elif task_name == 'black_list':
@@ -358,10 +358,10 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             current_transaction_id="txn"+str(transaction_count), 
             next_transaction_id='None' if is_last_transaction else "txn"+str(transaction_count+1), 
             total_transactions_checked = index,  
-            total_transactions_left = len(data_list)-transaction_count,  
+            total_transactions_left = len(data_list)-index,   
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
-            percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
+            percentage_of_transactions_processed = round((index/len(data_list))*100),  
             current_process="rules_engine"
         )
     else:
@@ -371,10 +371,10 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             current_transaction_id="txn"+str(transaction_count), 
             next_transaction_id='None' if is_last_transaction else "txn"+str(transaction_count+1), 
             total_transactions_checked = index,  
-            total_transactions_left = len(data_list)-transaction_count,  
+            total_transactions_left = len(data_list)-index,  
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
-            percentage_of_transactions_processed = round((transaction_count/len(data_list))*100),  
+            percentage_of_transactions_processed = round((index/len(data_list))*100),  
             current_process="black_list"
         )
 
