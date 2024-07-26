@@ -394,17 +394,15 @@ class AMLEmploymentCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
-        aml_risk_counts = {'True': 0, 'False': 0}
     
         models = [
-            ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData
+            ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData,
+            ECommerceFailedModel,CreditCardFailedModel
         ]
         
         aml_risk_true_counts = {}
-        aml_risk_false_counts = {}
         
         for model in models:
-            # Count unique employment_status values where aml_risk=True
             true_counts = model.objects.filter(aml_risk=True).values('employment_status').annotate(count=Count('employment_status'))
             for entry in true_counts:
                 status = entry['employment_status']
@@ -415,7 +413,22 @@ class AMLEmploymentCountView(APIView):
                     aml_risk_true_counts[status] = count
             
 
-        # Prepare the response
         response = aml_risk_true_counts
         
         return Response(response)
+    
+class FailedLocationView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+        models = [FailedCustomerData,ECommerceFailedModel,CreditCardFailedModel ]   
+        locations = []
+
+        for model in models:
+            datas = model.objects.values('id','latitude','longitude')
+
+            for data in datas:
+                locations.append({'latitude':data['latitude'],'longitude':data['longitude'],'id':data['id']})
+
+        return Response(locations)        
+

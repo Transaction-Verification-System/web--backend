@@ -24,6 +24,8 @@ urlpatterns = [
 
     path('insights/fraud/employment/',EmploymentCountView.as_view(),name='employ_count'),
     path('insights/aml/employment/',AMLEmploymentCountView.as_view(),name='aml_emp_count'),
+
+    path('insights/fraud/location/',FailedLocationView.as_view(),name='failed_location'),
 ]
 
 

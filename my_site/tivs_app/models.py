@@ -277,6 +277,8 @@ class CreditCardPassedModel(models.Model):
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
     aml_risk = models.BooleanField(default=False, blank=True) 
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
 
 
@@ -320,6 +322,8 @@ class CreditCardFailedModel(models.Model):
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
     aml_risk = models.BooleanField(default=False, blank=True) 
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
 
 
@@ -365,6 +369,8 @@ class CreditRePassedModel(models.Model):
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
     aml_risk = models.BooleanField(default=False, blank=True) 
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
 
 
@@ -451,6 +457,8 @@ class ECommercePassedModel(models.Model):
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
     aml_risk = models.BooleanField(default=False, blank=True) 
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
 
     def __str__(self):
@@ -490,6 +498,8 @@ class ECommerceFailedModel(models.Model):
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
     aml_risk = models.BooleanField(default=False, blank=True) 
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
 
     def __str__(self):
@@ -529,6 +539,8 @@ class ECommerceRePassedModel(models.Model):
     reason = models.CharField(max_length=255)
     verified = models.BooleanField()
     aml_risk = models.BooleanField(default=False, blank=True) 
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
 
     def __str__(self):
