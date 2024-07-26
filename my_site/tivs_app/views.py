@@ -421,7 +421,7 @@ class FailedLocationView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
-        models = [FailedCustomerData,ECommerceFailedModel,CreditCardFailedModel ]   
+        models = [FailedCustomerData,ECommerceFailedModel,CreditCardFailedModel]   
         locations = []
 
         for model in models:
