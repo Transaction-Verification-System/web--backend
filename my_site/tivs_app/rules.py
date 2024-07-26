@@ -63,7 +63,7 @@ def calculate_reputation_score(data):
     return score
 
 
-def model_check(data):
+def banking_fraud_model_check(data):
 
     required_fields = [
         "income", "name_email_similarity", "prev_address_months_count",
@@ -92,3 +92,21 @@ def model_check(data):
 
     return data['isFraud']
 
+def aml_model(data):
+    required_fields = ["Time","Date","Payment_type","Sender_account","Receiver_account","Amount","Payment_currency","Received_currency","Sender_bank_location","Receiver_bank_location","Laundering_type"
+    ]
+
+    filtered_data = {key: data[key] for key in required_fields if key in data}
+
+
+    url = 'https://model-backend-qys8.onrender.com/aml/predict'
+
+    response = requests.post(url, json=filtered_data)
+
+    data = response.json()
+    print("Status Code:", response.status_code)
+    print("Response Body:", response.json())
+
+    print('Status:',data["isLaundering"])
+
+    return data["isLaundering"]
