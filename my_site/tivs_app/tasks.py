@@ -107,18 +107,21 @@ def ai_prediction(data,user_id):
             data['latitude'] = location.latitude
             data['longitude'] = location.longitude
 
-        if result == 0:
+        # if result == 0:
+        #     data['verified'] = False
+        #     data['reason'] = 'Transaction Failed due to AI model prediction.'
+        #     logger.info('Transaction failed due to AI model prediction.')        
+
+        # else:
+        #     data['verified'] = True
+        #     data['reason'] = 'Transaction Successful.'
+        #     logger.info('Customer data saved.')
+
+
+        if result == True:
             data['verified'] = False
             data['reason'] = 'Transaction Failed due to AI model prediction.'
-            logger.info('Transaction failed due to AI model prediction.')        
-
-        else:
-            data['verified'] = True
-            data['reason'] = 'Transaction Successful.'
-            logger.info('Customer data saved.')
-
-
-        if result == False:
+            logger.info('Transaction failed due to AI model prediction.')  
             if failed_serializer.is_valid():
                 failed_serializer.save(user_id=user_id)
             else:
@@ -127,6 +130,9 @@ def ai_prediction(data,user_id):
                 return {'errors': errors, 'AI Score': result}    
             return 1
         else:
+            data['verified'] = True
+            data['reason'] = 'Transaction Successful.'
+            logger.info('Customer data saved.')
             if passed_serializer.is_valid():
                 passed_serializer.save(user_id=user_id)
             else:
@@ -289,16 +295,17 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
 def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
     logger.info('Task 1')
     try:
-        
+        aml_result = False
         # transaction_count = index + 1
         transaction_count = redis_client.incr(f'transaction_count_{user_id}')
         mail_transaction_id = 'txn'+str(transaction_count)
         result = ai_prediction(x,user_id)
-        aml_result = aml_prediction(x,user_id)
+        
         logger.info(f'Index Task3: {index}')
         is_last_transaction = index+1 == len(data_list)
         
         if result == 0:
+            aml_result = aml_prediction(x,user_id)
             accepted_data += 1
             send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result)
             time.sleep(3)
