@@ -51,3 +51,8 @@ class RePassedCustomerDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = RePassedCustomerData
         fields = '__all__'          
+
+class ErrorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ErrorLogsModel
+        fields = '__all__'
