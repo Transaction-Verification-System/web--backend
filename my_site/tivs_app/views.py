@@ -594,4 +594,30 @@ class AMLSourceCountView(APIView):
 
         response = aml_risk_true_counts
         
-        return Response(response)            
+        return Response(response)           
+
+
+class TypeCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+        banking_fail = FailedCustomerData.objects.count()
+        ecommerce_fail = ECommerceFailedModel.objects.count()
+        credit_card_fail = CreditCardFailedModel.objects.count()
+        
+        result = {'banking_fail':banking_fail,'ecommerce_fail':ecommerce_fail,'credit_card_fail':credit_card_fail}
+        
+        return Response(result)
+    
+class AMLTypeCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+    
+        banking_fail = FailedCustomerData.objects.filter(aml_risk=True).count()+PassedCustomerData.objects.filter(aml_risk=True).count()+RePassedCustomerData.objects.filter(aml_risk=True).count()
+        ecommerce_fail = ECommerceFailedModel.objects.filter(aml_risk=True).count()+ECommercePassedModel.objects.filter(aml_risk=True).count()+ECommerceRePassedModel.objects.filter(aml_risk=True).count()
+        credit_card_fail = CreditCardFailedModel.objects.filter(aml_risk=True).count()+CreditCardPassedModel.objects.filter(aml_risk=True).count()+CreditRePassedModel.objects.filter(aml_risk=True).count()
+        
+        result = {'banking_fail':banking_fail,'ecommerce_fail':ecommerce_fail,'credit_card_fail':credit_card_fail}
+        
+        return Response(result) 
