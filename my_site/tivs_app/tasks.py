@@ -138,7 +138,7 @@ def ai_prediction(data,user_id):
         failed_serializer = FailedCustomerDataSerializer(data=data)
 
         geolocator = Nominatim(user_agent='tivs_app')
-        location = geolocator.geocode(data['country'])
+        location = geolocator.geocode(data['sender_bank_location'])
 
         if location:
             data['latitude'] = location.latitude
@@ -208,7 +208,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
             x['verified'] = False
 
             geolocator = Nominatim(user_agent='tivs_app')
-            location = geolocator.geocode(x['country'])
+            location = geolocator.geocode(x['sender_bank_location'])
 
             if location:
                 x['latitude'] = location.latitude
@@ -263,7 +263,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
             x['verified'] = False
 
             geolocator = Nominatim(user_agent='tivs_app')
-            location = geolocator.geocode(x['country'])
+            location = geolocator.geocode(x['sender_bank_location'])
 
             if location:
                 x['latitude'] = location.latitude
