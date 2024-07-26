@@ -34,6 +34,9 @@ urlpatterns = [
     path('insights/fraud/payment/',PaymentTypeCountView.as_view(),name='payment_device'),
     path('insights/aml/payment/',AMLPaymentTypeCountView.as_view(),name='aml_payment_count'),
 
+    path('insights/fraud/housing/',HousingCountView.as_view(),name='housing_device'),
+    path('insights/aml/housing/',AMLHousingCountView.as_view(),name='aml_housing_count'),
+
 ]
 
 
