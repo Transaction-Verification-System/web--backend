@@ -468,3 +468,56 @@ class AMLDeviceCountView(APIView):
         response = aml_risk_true_counts
         
         return Response(response)    
+    
+
+class FailedLocationAMLView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self, request):
+        models = [FailedCustomerData, ECommerceFailedModel, CreditCardFailedModel , PassedCustomerData,ECommercePassedModel,ECommerceRePassedModel,CreditCardPassedModel]
+        locations = []
+
+        for model in models:
+            datas = model.objects.filter(aml_risk=True).values('id', 'latitude', 'longitude')
+
+            for data in datas:
+                locations.append({'latitude': data['latitude'], 'longitude': data['longitude'], 'id': data['id']})
+
+        return Response(locations)    
+    
+
+class PaymentTypeCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+        status_counts = FailedCustomerData.objects.values('payment_type').annotate(count=Count('payment_type'))
+        
+        result = {item['payment_type']: item['count'] for item in status_counts}
+        
+        return Response(result)
+    
+class AMLPaymentTypeCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+    
+        models = [
+            ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData
+        ]
+        
+        aml_risk_true_counts = {}
+        
+        for model in models:
+            true_counts = model.objects.filter(aml_risk=True).values('payment_type').annotate(count=Count('payment_type'))
+            for entry in true_counts:
+                status = entry['payment_type']
+                count = entry['count']
+                if status in aml_risk_true_counts:
+                    aml_risk_true_counts[status] += count
+                else:
+                    aml_risk_true_counts[status] = count
+            
+
+        response = aml_risk_true_counts
+        
+        return Response(response)    

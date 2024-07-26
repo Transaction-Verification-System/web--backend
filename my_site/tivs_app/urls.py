@@ -26,8 +26,13 @@ urlpatterns = [
     path('insights/aml/employment/',AMLEmploymentCountView.as_view(),name='aml_emp_count'),
 
     path('insights/fraud/location/',FailedLocationView.as_view(),name='failed_location'),
+    path('insights/aml/location/',FailedLocationAMLView.as_view(),name='aml_location_count'),
+
     path('insights/fraud/device/',DeviceCountView.as_view(),name='failed_device'),
     path('insights/aml/device/',AMLDeviceCountView.as_view(),name='aml_device_count'),
+
+    path('insights/fraud/payment/',PaymentTypeCountView.as_view(),name='payment_device'),
+    path('insights/aml/payment/',AMLPaymentTypeCountView.as_view(),name='aml_payment_count'),
 
 ]
 
