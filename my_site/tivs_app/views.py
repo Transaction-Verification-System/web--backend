@@ -621,3 +621,64 @@ class AMLTypeCountView(APIView):
         result = {'banking_fail':banking_fail,'ecommerce_fail':ecommerce_fail,'credit_card_fail':credit_card_fail}
         
         return Response(result) 
+    
+
+class PFCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+        banking_fail = FailedCustomerData.objects.count()
+        banking_pass = PassedCustomerData.objects.count()
+        ecommerce_fail = ECommerceFailedModel.objects.count()
+        ecommerce_pass = ECommercePassedModel.objects.count()
+        credit_card_fail = CreditCardFailedModel.objects.count()
+        credit_card_pass = CreditCardPassedModel.objects.count()
+
+        banking = {
+            'fail': banking_fail,
+            'pass': banking_pass
+        }
+
+        ecommerce = {
+            'fail': ecommerce_fail,
+            'pass': ecommerce_pass
+        }
+
+        credit_card = {
+            'fail': credit_card_fail,
+            'pass': credit_card_pass
+        }
+        
+        result = {'banking':banking,'ecommerce':ecommerce,'credit_card':credit_card}
+        
+        return Response(result)
+    
+class AMLPFCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
+
+    def get(self,request):
+        banking_fail = FailedCustomerData.objects.filter(aml_risk=True).count()
+        banking_pass = PassedCustomerData.objects.filter(aml_risk=True).count()
+        ecommerce_fail = ECommerceFailedModel.objects.filter(aml_risk=True).count()
+        ecommerce_pass = ECommercePassedModel.objects.filter(aml_risk=True).count()
+        credit_card_fail = CreditCardFailedModel.objects.filter(aml_risk=True).count()
+        credit_card_pass = CreditCardPassedModel.objects.filter(aml_risk=True).count()
+
+        banking = {
+            'fail': banking_fail,
+            'pass': banking_pass
+        }
+
+        ecommerce = {
+            'fail': ecommerce_fail,
+            'pass': ecommerce_pass
+        }
+
+        credit_card = {
+            'fail': credit_card_fail,
+            'pass': credit_card_pass
+        }
+        
+        result = {'banking':banking,'ecommerce':ecommerce,'credit_card':credit_card}
+        
+        return Response(result)
