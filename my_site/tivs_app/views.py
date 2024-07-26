@@ -191,7 +191,9 @@ class TransactionView(APIView):
             try:
                 if data_list:
                     first_data = data_list[0]
-                    chain_task.apply_async((first_data, 0, data_list, accepted_data, rejected_data, user_id), queue='queue_1')
+                    type = first_data['type']
+                    print('TYpe:',type)
+                    chain_task.apply_async((first_data, 0, data_list, accepted_data, rejected_data, user_id,type), queue='queue_1')
                 else:
                     raise ValueError('Empty data_list provided')
                 return redirect('success')  
