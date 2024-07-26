@@ -97,6 +97,20 @@ class PassedCustomerData(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
 
+
+
+    time = models.CharField(max_length=255)
+    date = models.CharField(max_length=255)
+    sender_account = models.BigIntegerField()
+    receiver_account = models.BigIntegerField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_currency = models.CharField(max_length=3)
+    received_currency = models.CharField(max_length=3)
+    sender_bank_location = models.CharField(max_length=100)
+    receiver_bank_location = models.CharField(max_length=100)
+    payment_type = models.CharField(max_length=50)
+    laundering_type = models.CharField(max_length=50)
+
     def __str__(self):
         return f"Passed Customer Data: {self.id}"
 
@@ -140,6 +154,20 @@ class FailedCustomerData(models.Model):
     country = models.CharField(max_length=255)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+
+
+
+    time = models.CharField(max_length=255)
+    date = models.CharField(max_length=255)
+    sender_account = models.BigIntegerField()
+    receiver_account = models.BigIntegerField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_currency = models.CharField(max_length=3)
+    received_currency = models.CharField(max_length=3)
+    sender_bank_location = models.CharField(max_length=100)
+    receiver_bank_location = models.CharField(max_length=100)
+    payment_type = models.CharField(max_length=50)
+    laundering_type = models.CharField(max_length=50)
 
     def __str__(self):
         return f"Failed Customer Data: {self.id}"    
@@ -185,6 +213,21 @@ class RePassedCustomerData(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
 
+
+
+
+    time = models.CharField(max_length=255)
+    date = models.CharField(max_length=255)
+    sender_account = models.BigIntegerField()
+    receiver_account = models.BigIntegerField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_currency = models.CharField(max_length=3)
+    received_currency = models.CharField(max_length=3)
+    sender_bank_location = models.CharField(max_length=100)
+    receiver_bank_location = models.CharField(max_length=100)
+    payment_type = models.CharField(max_length=50)
+    laundering_type = models.CharField(max_length=50)
+
     def __str__(self):
         return f"Re-passed Customer Data: {self.id}"      
 
@@ -227,6 +270,21 @@ class ErrorLogsModel(models.Model):
     reason = models.CharField(max_length=255)
     country = models.CharField(max_length=255)
     timestamp = models.DateTimeField(auto_now_add=True) 
+
+
+
+
+    time = models.CharField(max_length=255)
+    date = models.CharField(max_length=255)
+    sender_account = models.BigIntegerField()
+    receiver_account = models.BigIntegerField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_currency = models.CharField(max_length=3)
+    received_currency = models.CharField(max_length=3)
+    sender_bank_location = models.CharField(max_length=100)
+    receiver_bank_location = models.CharField(max_length=100)
+    payment_type = models.CharField(max_length=50)
+    laundering_type = models.CharField(max_length=50)
 
     def __str__(self):
         return f"Error Customer Data: {self.id}"
