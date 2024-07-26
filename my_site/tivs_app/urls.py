@@ -43,6 +43,9 @@ urlpatterns = [
     path('insights/fraud/type/',TypeCountView.as_view(),name='type_count'),
     path('insights/aml/type/',AMLTypeCountView.as_view(),name='aml_type_count'),
 
+    path('insights/fraud/pf/',PFCountView.as_view(),name='pf_count'),
+    path('insights/aml/pf/',AMLPFCountView.as_view(),name='aml_pf_count'),
+
 ]
 
 
