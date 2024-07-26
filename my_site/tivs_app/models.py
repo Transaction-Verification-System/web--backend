@@ -108,7 +108,6 @@ class PassedCustomerData(models.Model):
     received_currency = models.CharField(max_length=3)
     sender_bank_location = models.CharField(max_length=100)
     receiver_bank_location = models.CharField(max_length=100)
-    payment_type = models.CharField(max_length=50)
     laundering_type = models.CharField(max_length=50)
 
     def __str__(self):
@@ -166,7 +165,6 @@ class FailedCustomerData(models.Model):
     received_currency = models.CharField(max_length=3)
     sender_bank_location = models.CharField(max_length=100)
     receiver_bank_location = models.CharField(max_length=100)
-    payment_type = models.CharField(max_length=50)
     laundering_type = models.CharField(max_length=50)
 
     def __str__(self):
@@ -225,7 +223,6 @@ class RePassedCustomerData(models.Model):
     received_currency = models.CharField(max_length=3)
     sender_bank_location = models.CharField(max_length=100)
     receiver_bank_location = models.CharField(max_length=100)
-    payment_type = models.CharField(max_length=50)
     laundering_type = models.CharField(max_length=50)
 
     def __str__(self):
@@ -283,7 +280,6 @@ class ErrorLogsModel(models.Model):
     received_currency = models.CharField(max_length=3)
     sender_bank_location = models.CharField(max_length=100)
     receiver_bank_location = models.CharField(max_length=100)
-    payment_type = models.CharField(max_length=50)
     laundering_type = models.CharField(max_length=50)
 
     def __str__(self):

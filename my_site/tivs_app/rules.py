@@ -65,9 +65,24 @@ def calculate_reputation_score(data):
 
 def model_check(data):
 
-    url = 'https://model-backend-qys8.onrender.com/banking-fraud/predict'
+    required_fields = [
+        "income", "name_email_similarity", "prev_address_months_count",
+        "current_address_months_count", "customer_age", "days_since_request",
+        "intended_balcon_amount", "payment_type", "zip_count_4w", "velocity_6h",
+        "velocity_24h", "velocity_4w", "bank_branch_count_8w",
+        "date_of_birth_distinct_emails_4w", "employment_status",
+        "credit_risk_score", "email_is_free", "housing_status", "phone_home_valid",
+        "phone_mobile_valid", "bank_months_count", "has_other_cards",
+        "proposed_credit_limit", "foreign_request", "source",
+        "session_length_in_minutes", "device_os", "keep_alive_session",
+        "device_distinct_emails_8w", "device_fraud_count", "month"
+    ]
+    
+    filtered_data = {key: data[key] for key in required_fields if key in data}
 
-    response = requests.post(url, json=data)
+    url = 'https://model-backend-qys8.onrender.com/banking-fraud-gbm/predict'
+
+    response = requests.post(url, json=filtered_data)
 
     data = response.json()
     print("Status Code:", response.status_code)
