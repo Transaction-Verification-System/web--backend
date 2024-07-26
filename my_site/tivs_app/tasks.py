@@ -5,7 +5,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from .models import *
 from rest_framework.response import Response
-from .rules import calculate_reputation_score,model_check
+from .rules import calculate_reputation_score,banking_fraud_model_check,aml_model
 from .serializers import *
 from django.utils import timezone
 from .utility import ISocketResponse
@@ -18,33 +18,6 @@ logger = logging.getLogger(__name__)
 
 redis_client = redis.StrictRedis(host='localhost',port=6379,db=0)
 
-
-# class CustomRetry(Task):
-#     autoretry_for = (Exception,)
-#     retry_kwargs = {'max_retries': 3}
-#     retry_backoff = True
-#     retry_backoff_max = 60
-#     retry_jitter = True
-
-#     def on_failure(self, exc, task_id, args, kwargs, einfo):
-#         logger.error(f'Task {task_id} failed: {exc}')
-#         current_queue = self.request.delivery_info.get('routing_key')
-#         if current_queue == 'queue_1':
-#             new_queue = 'queue_2'
-#         elif current_queue == 'queue_2':
-#             new_queue = 'queue_3'
-#         else:
-#             logger.error(f'Unknown Task {task_id} retrying in queue. Skipping.')
-#             return None
-
-#         if self.request.retries < self.retry_kwargs['max_retries']:
-#             logger.warning(f'Task {task_id} retrying in {new_queue}')
-#             raise self.retry(exc=exc, queue=new_queue)
-#         else:
-#             logger.error(f'Task {task_id} has exceeded max retries. Logging error and proceeding to next transaction.')
-#             self.handle_retry_and_proceed()
-
-# app.Task = CustomRetry
 
 def error_list(x,user_id,task_name):
     logger.info('I am in Error Log Model.')
@@ -74,20 +47,6 @@ def handle_retry_and_proceed(task_name, exc, task_instance, x, index, data_list,
             chain(chain_task.s(next_data, index, data_list, accepted_data, rejected_data, user_id)).apply_async(queue='queue_1')
         else:
             return f'{task_name} Engine Completed successfully.'
-    # else:
-    #     if task_instance == chain_task:
-    #         logger.warning(f'Retrying {task_name} in queue_1')
-    #         chain(task_instance.s(x, index, data_list, accepted_data, rejected_data, user_id)).apply_async(queue='queue_1')
-    #     elif task_instance == chain_task2:
-    #         logger.warning(f'Retrying {task_name} in queue_2')
-    #         chain(task_instance.s(x, index, data_list, accepted_data, rejected_data, user_id)).apply_async(queue='queue_2')    
-    #     elif task_instance == chain_task3:
-    #         logger.warning(f'Retrying {task_name} in queue_3')
-    #         chain(task_instance.s(x, index, data_list, accepted_data, rejected_data, user_id)).apply_async(queue='queue_3')
-    #     else:
-    #         logger.error(f'Unknown task {task_name} encountered. Skipping retry.')
-    #         return None
-   
 
 
 def blacklist_task(data,user_id):
@@ -130,21 +89,25 @@ def rules_engine(data,user_id):
 
 def ai_prediction(data,user_id):
     try:
-        result = model_check(data)
+        result = banking_fraud_model_check(data)
 
         data['user'] = user_id
 
         passed_serializer = PassedCustomerDataSerializer(data=data)
         failed_serializer = FailedCustomerDataSerializer(data=data)
 
+        data['user'] = user_id
+        data['reason'] = 'Transaction Failed due to blacklist check.'
+        data['verified'] = False
+
         geolocator = Nominatim(user_agent='tivs_app')
-        location = geolocator.geocode(data['sender_bank_location'])
+        location = geolocator.geocode(data['Sender_bank_location'])
 
         if location:
             data['latitude'] = location.latitude
             data['longitude'] = location.longitude
 
-        if result == False:
+        if result == 0:
             data['verified'] = False
             data['reason'] = 'Transaction Failed due to AI model prediction.'
             logger.info('Transaction failed due to AI model prediction.')        
@@ -177,6 +140,34 @@ def ai_prediction(data,user_id):
         logger.error(f'Error in AI prediction: {exc}')
         raise exc    
 
+def aml_prediction(data,user_id):
+    try:
+        result = aml_model(data)
+
+        data['user'] = user_id
+
+        passed_serializer = PassedCustomerDataSerializer(data=data)
+
+
+        if result == 0:
+            data['aml_risk'] = False
+            if passed_serializer.is_valid():
+                passed_serializer.save(user_id = user_id)
+            logger.info('Transaction failed due to AI model prediction.') 
+
+            return True       
+
+        else:
+            data['aml_risk'] = True
+            if passed_serializer.is_valid():
+                passed_serializer.save(user_id = user_id)
+            logger.info('Transaction failed due to AI model prediction.') 
+
+            return False   
+    except Exception as exc:
+        raise exc    
+
+
 
 
 @shared_task(queue='queue_1')
@@ -194,7 +185,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
         is_last_transaction = index+1 == len(data_list) 
 
         if result == 0:
-            send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction)
+            send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction,aml_result=False)
             time.sleep(3)
 
             chain(chain_task2.s(x, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_2')
@@ -208,7 +199,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
             x['verified'] = False
 
             geolocator = Nominatim(user_agent='tivs_app')
-            location = geolocator.geocode(x['sender_bank_location'])
+            location = geolocator.geocode(x['Sender_bank_location'])
 
             if location:
                 x['latitude'] = location.latitude
@@ -222,7 +213,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id):
                 logger.info('Invalid Serilializer')
                 logger.error(f'Serializer errors: {serializer.errors}')
 
-            send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
+            send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result=False)
             time.sleep(3)
 
             send_fail_mail(user_id,x['reason'],mail_transaction_id)
@@ -250,7 +241,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
         is_last_transaction = index+1 == len(data_list)
         
         if result == 0:
-            send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction)
+            send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction,aml_result=False)
             time.sleep(3)
 
             chain(chain_task3.s(x, index, data_list, accepted_data, rejected_data,user_id)).apply_async(queue='queue_3')
@@ -263,7 +254,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
             x['verified'] = False
 
             geolocator = Nominatim(user_agent='tivs_app')
-            location = geolocator.geocode(x['sender_bank_location'])
+            location = geolocator.geocode(x['Sender_bank_location'])
 
             if location:
                 x['latitude'] = location.latitude
@@ -277,7 +268,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id):
                 logger.info('Invalid Serilializer')
                 logger.error(f'Serializer errors: {serializer.errors}')
 
-            send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
+            send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result=False)
             time.sleep(3)
 
             send_fail_mail(user_id,x['reason'],mail_transaction_id)
@@ -303,12 +294,13 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
         transaction_count = redis_client.incr(f'transaction_count_{user_id}')
         mail_transaction_id = 'txn'+str(transaction_count)
         result = ai_prediction(x,user_id)
+        aml_result = aml_prediction(x,user_id)
         logger.info(f'Index Task3: {index}')
         is_last_transaction = index+1 == len(data_list)
         
         if result == 0:
             accepted_data += 1
-            send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
+            send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result)
             time.sleep(3)
 
             if index + 1 < len(data_list):
@@ -321,7 +313,7 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
         if result == 1:
             rejected_data += 1
 
-            send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction)
+            send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result)
             time.sleep(3)
 
             send_fail_mail(user_id,x['reason'],mail_transaction_id)
@@ -337,7 +329,7 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id):
         handle_retry_and_proceed('AI', exc, chain_task3, x, index, data_list, accepted_data, rejected_data, user_id,2)
         # raise exc
 
-def send_message_channel(result,task_name,transaction_count,accepted_data,data_list,rejected_data,index,is_last_transaction=False):
+def send_message_channel(result,task_name,transaction_count,accepted_data,data_list,rejected_data,index,is_last_transaction=False,aml_result=False):
     if task_name == 'rules_engine':
         response = ISocketResponse(
             verified=result == 0,
@@ -349,6 +341,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
             percentage_of_transactions_processed = round((index/len(data_list))*100),  
+            aml_risk=aml_result,
             current_process = "ai_model"
         )
     elif task_name == 'black_list':
@@ -362,6 +355,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
             percentage_of_transactions_processed = round((index/len(data_list))*100),  
+            aml_risk=aml_result,
             current_process="rules_engine"
         )
     else:
@@ -375,6 +369,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             total_transactions_accepted = accepted_data,  
             total_transactions_rejected = rejected_data,  
             percentage_of_transactions_processed = round((index/len(data_list))*100),  
+            aml_risk = aml_result,
             current_process="black_list"
         )
 
