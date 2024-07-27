@@ -399,7 +399,6 @@ class AMLEmploymentCountView(APIView):
     
         models = [
             ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData,
-            ECommerceFailedModel,CreditCardFailedModel
         ]
         
         aml_risk_true_counts = {}
