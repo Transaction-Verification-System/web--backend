@@ -298,7 +298,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id,type):
 
                 if result == 0:
                     send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction,aml_result=False,type='banking')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     chain(chain_task2.s(x, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_2')
                 if result == 1:
@@ -326,7 +326,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id,type):
                         logger.error(f'Serializer errors: {serializer.errors}')
 
                     send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result=False,type='banking')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     send_fail_mail(user_id,reason,mail_transaction_id)
 
@@ -354,7 +354,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id,type):
 
                 if result == 0:
                     send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction,aml_result=False,type='credit_card')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     chain(chain_task2.s(x, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_2')
                 if result == 1:
@@ -382,7 +382,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id,type):
                         logger.error(f'Serializer errors: {serializer.errors}')
 
                     send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result=False,type='credit_card')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     send_fail_mail(user_id,reason,mail_transaction_id)
 
@@ -409,7 +409,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id,type):
 
                 if result == 0:
                     send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction,aml_result=False,type='ecom')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     chain(chain_task2.s(x, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_2')
                 if result == 1:
@@ -437,7 +437,7 @@ def chain_task(x, index, data_list, accepted_data, rejected_data,user_id,type):
                         logger.error(f'Serializer errors: {serializer.errors}')
 
                     send_message_channel(result, 'black_list', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result=False,type='ecom')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     send_fail_mail(user_id,reason,mail_transaction_id)
 
@@ -467,7 +467,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id,type):
                 
                 if result == 0:
                     send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction,aml_result=False,type='banking')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     chain(chain_task3.s(x, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_3')
                 
@@ -495,7 +495,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id,type):
                         logger.error(f'Serializer errors: {serializer.errors}')
 
                     send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result=False,type='banking')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     send_fail_mail(user_id,reason,mail_transaction_id)
 
@@ -521,7 +521,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id,type):
                 
                 if result == 0:
                     send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction,aml_result=False,type='credit_card')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     chain(chain_task3.s(x, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_3')
                 
@@ -573,7 +573,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id,type):
                 
                 if result == 0:
                     send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index,is_last_transaction,aml_result=False,type='ecom')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     chain(chain_task3.s(x, index, data_list, accepted_data, rejected_data,user_id,type)).apply_async(queue='queue_3')
                 
@@ -601,7 +601,7 @@ def chain_task2(x, index, data_list, accepted_data, rejected_data,user_id,type):
                         logger.error(f'Ecommerce Serializer errors: {serializer.errors}')
 
                     send_message_channel(result, 'rules_engine', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result=False,type='ecom')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     send_fail_mail(user_id,reason,mail_transaction_id)
 
@@ -638,7 +638,7 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id,type):
                     
                     accepted_data += 1
                     send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result,type='banking')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     if index + 1 < len(data_list):
                         next_data = data_list[index + 1]
@@ -653,7 +653,7 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id,type):
                     reason = 'Transaction Failed due to AI check.'
 
                     send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result,type='banking')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     send_fail_mail(user_id,reason,mail_transaction_id)
 
@@ -682,7 +682,7 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id,type):
                     
                     accepted_data += 1
                     send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result,type='credit_card')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     if index + 1 < len(data_list):
                         next_data = data_list[index + 1]
@@ -697,7 +697,7 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id,type):
                     reason = 'Transaction Failed due to AI check.'
 
                     send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result,type='credit_card')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     send_fail_mail(user_id,reason,mail_transaction_id)
 
@@ -725,7 +725,7 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id,type):
                     
                     accepted_data += 1
                     send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result,type='ecom')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     if index + 1 < len(data_list):
                         next_data = data_list[index + 1]
@@ -740,7 +740,7 @@ def chain_task3(x, index, data_list, accepted_data, rejected_data,user_id,type):
                     reason = 'Transaction Failed due to AI check.'
 
                     send_message_channel(result, 'ai_model', transaction_count, accepted_data, data_list, rejected_data,index+1,is_last_transaction,aml_result,type='ecom')
-                    time.sleep(3)
+                    time.sleep(5)
 
                     send_fail_mail(user_id,reason,mail_transaction_id)
 
