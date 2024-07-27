@@ -228,7 +228,7 @@ SIMPLE_JWT = {
 
 CSRF_TRUSTED_ORIGINS = [
     'https://tvis.onrender.com',
-    'https://127.0.0.1:8000'  # Adjust this based on your development settings
+    'https://127.0.0.1:8000'  
 ]
 
 CORS_ALLOWED_ORIGINS = [

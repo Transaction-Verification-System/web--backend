@@ -1,5 +1,8 @@
 import requests
-import json
+import json,os
+from dotenv import load_dotenv
+
+load_dotenv
 
 def calculate_reputation_score(data):
     score = 0
@@ -158,7 +161,8 @@ def banking_fraud_model_check(data):
     
     filtered_data = {key: data[key] for key in required_fields if key in data}
 
-    url = 'https://model-backend-qys8.onrender.com/banking-fraud-gbm/predict'
+    # url = 'https://model-backend-qys8.onrender.com/banking-fraud-gbm/predict'
+    url = os.getenv('banking_fraud_url')
 
     response = requests.post(url, json=filtered_data)
 
@@ -177,7 +181,8 @@ def aml_model(data):
     filtered_data = {key: data[key] for key in required_fields if key in data}
 
 
-    url = 'https://model-backend-qys8.onrender.com/aml/predict'
+    # url = 'https://model-backend-qys8.onrender.com/aml/predict'
+    url = os.getenv('aml_url')
 
     response = requests.post(url, json=filtered_data)
 
@@ -197,7 +202,10 @@ def credit_card_model(data):
     filtered_data = {key: data[key] for key in required_fields if key in data}
 
 
-    url = 'https://model-backend-qys8.onrender.com/credit-fraud/predict'
+    # url = 'https://model-backend-qys8.onrender.com/credit-fraud/predict'
+    url = os.getenv('credit_card_url')
+
+
 
     response = requests.post(url, json=filtered_data)
 
@@ -241,7 +249,8 @@ def ecommerce_model(data):
     filtered_data = {key: data[key] for key in required_fields if key in data}
 
 
-    url = 'https://model-backend-qys8.onrender.com/ecommerce_fraud/predict'
+    # url = 'https://model-backend-qys8.onrender.com/ecommerce_fraud/predict'
+    url = os.getenv('ecommerce_url')
 
     response = requests.post(url, json=filtered_data)
 
