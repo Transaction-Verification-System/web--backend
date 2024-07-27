@@ -581,7 +581,7 @@ class SourceCountView(APIView):
 
     def get(self,request):
         user = request.user 
-        status_counts = FailedCustomerData.filter(user=user).objects.values('source').annotate(count=Count('source'))
+        status_counts = FailedCustomerData.objects.filter(user=user).values('source').annotate(count=Count('source'))
         
         result = {item['source']: item['count'] for item in status_counts}
         
