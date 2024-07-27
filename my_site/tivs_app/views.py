@@ -384,7 +384,8 @@ class EmploymentCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
-        status_counts = FailedCustomerData.objects.values('employment_status').annotate(count=Count('employment_status'))
+        user = request.user
+        status_counts = FailedCustomerData.objects.filter(user=user).values('employment_status').annotate(count=Count('employment_status'))
         
         result = {item['employment_status']: item['count'] for item in status_counts}
         
@@ -394,6 +395,7 @@ class AMLEmploymentCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
+        user = request.user
     
         models = [
             ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData,
@@ -403,7 +405,7 @@ class AMLEmploymentCountView(APIView):
         aml_risk_true_counts = {}
         
         for model in models:
-            true_counts = model.objects.filter(aml_risk=True).values('employment_status').annotate(count=Count('employment_status'))
+            true_counts = model.objects.filter(user=user,aml_risk=True).values('employment_status').annotate(count=Count('employment_status'))
             for entry in true_counts:
                 status = entry['employment_status']
                 count = entry['count']
@@ -421,11 +423,13 @@ class FailedLocationView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
+        user = request.user
+
         models = [FailedCustomerData,ECommerceFailedModel,CreditCardFailedModel]   
         locations = []
 
         for model in models:
-            datas = model.objects.values('id','latitude','longitude')
+            datas = model.objects.filter(user=user).values('id','latitude','longitude')
 
             for data in datas:
                 locations.append({'latitude':data['latitude'],'longitude':data['longitude'],'id':data['id']})
@@ -437,7 +441,9 @@ class DeviceCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
-        status_counts = FailedCustomerData.objects.values('device_os').annotate(count=Count('device_os'))
+        user = request.user
+        
+        status_counts = FailedCustomerData.objects.filter(user=user).values('device_os').annotate(count=Count('device_os'))
         
         result = {item['device_os']: item['count'] for item in status_counts}
         
@@ -447,6 +453,7 @@ class AMLDeviceCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
+        user = request.user
     
         models = [
             ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData
@@ -455,7 +462,7 @@ class AMLDeviceCountView(APIView):
         aml_risk_true_counts = {}
         
         for model in models:
-            true_counts = model.objects.filter(aml_risk=True).values('device_os').annotate(count=Count('device_os'))
+            true_counts = model.objects.filter(user=user,aml_risk=True).values('device_os').annotate(count=Count('device_os'))
             for entry in true_counts:
                 status = entry['device_os']
                 count = entry['count']
@@ -474,11 +481,14 @@ class FailedLocationAMLView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self, request):
+
+        user = request.user
+
         models = [FailedCustomerData, ECommerceFailedModel, CreditCardFailedModel , PassedCustomerData,ECommercePassedModel,ECommerceRePassedModel,CreditCardPassedModel]
         locations = []
 
         for model in models:
-            datas = model.objects.filter(aml_risk=True).values('id', 'latitude', 'longitude')
+            datas = model.objects.filter(user = user,aml_risk=True).values('id', 'latitude', 'longitude')
 
             for data in datas:
                 locations.append({'latitude': data['latitude'], 'longitude': data['longitude'], 'id': data['id']})
@@ -490,7 +500,9 @@ class PaymentTypeCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
-        status_counts = FailedCustomerData.objects.values('payment_type').annotate(count=Count('payment_type'))
+        user = request.user
+
+        status_counts = FailedCustomerData.objects.filter(user=user).values('payment_type').annotate(count=Count('payment_type'))
         
         result = {item['payment_type']: item['count'] for item in status_counts}
         
@@ -500,6 +512,7 @@ class AMLPaymentTypeCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
+        user = request.user
     
         models = [
             ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData
@@ -508,7 +521,7 @@ class AMLPaymentTypeCountView(APIView):
         aml_risk_true_counts = {}
         
         for model in models:
-            true_counts = model.objects.filter(aml_risk=True).values('payment_type').annotate(count=Count('payment_type'))
+            true_counts = model.objects.filter(user=user,aml_risk=True).values('payment_type').annotate(count=Count('payment_type'))
             for entry in true_counts:
                 status = entry['payment_type']
                 count = entry['count']
@@ -527,7 +540,9 @@ class HousingCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
-        status_counts = FailedCustomerData.objects.values('housing_status').annotate(count=Count('housing_status'))
+        user = request.user
+
+        status_counts = FailedCustomerData.objects.filter(user=user).values('housing_status').annotate(count=Count('housing_status'))
         
         result = {item['housing_status']: item['count'] for item in status_counts}
         
@@ -537,6 +552,7 @@ class AMLHousingCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
+        user = request.user
     
         models = [
             ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData
@@ -545,7 +561,7 @@ class AMLHousingCountView(APIView):
         aml_risk_true_counts = {}
         
         for model in models:
-            true_counts = model.objects.filter(aml_risk=True).values('housing_status').annotate(count=Count('housing_status'))
+            true_counts = model.objects.filter(user= user,aml_risk=True).values('housing_status').annotate(count=Count('housing_status'))
             for entry in true_counts:
                 status = entry['housing_status']
                 count = entry['count']
@@ -564,7 +580,8 @@ class SourceCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
-        status_counts = FailedCustomerData.objects.values('source').annotate(count=Count('source'))
+        user = request.user 
+        status_counts = FailedCustomerData.filter(user=user).objects.values('source').annotate(count=Count('source'))
         
         result = {item['source']: item['count'] for item in status_counts}
         
@@ -574,6 +591,8 @@ class AMLSourceCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
+
+        user = request.user
     
         models = [
             ErrorLogsModel, FailedCustomerData, PassedCustomerData,RePassedCustomerData
@@ -582,7 +601,7 @@ class AMLSourceCountView(APIView):
         aml_risk_true_counts = {}
         
         for model in models:
-            true_counts = model.objects.filter(aml_risk=True).values('source').annotate(count=Count('source'))
+            true_counts = model.objects.filter(user=user,aml_risk=True).values('source').annotate(count=Count('source'))
             for entry in true_counts:
                 status = entry['source']
                 count = entry['count']
@@ -601,9 +620,10 @@ class TypeCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
-        banking_fail = FailedCustomerData.objects.count()
-        ecommerce_fail = ECommerceFailedModel.objects.count()
-        credit_card_fail = CreditCardFailedModel.objects.count()
+        user = request.user
+        banking_fail = FailedCustomerData.objects.filter(user=user).count()
+        ecommerce_fail = ECommerceFailedModel.objects.filter(user=user).count()
+        credit_card_fail = CreditCardFailedModel.objects.filter(user=user).count()
         
         result = {'banking_fail':banking_fail,'ecommerce_fail':ecommerce_fail,'credit_card_fail':credit_card_fail}
         
@@ -613,10 +633,11 @@ class AMLTypeCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
+        user = request.user
     
-        banking_fail = FailedCustomerData.objects.filter(aml_risk=True).count()+PassedCustomerData.objects.filter(aml_risk=True).count()+RePassedCustomerData.objects.filter(aml_risk=True).count()
-        ecommerce_fail = ECommerceFailedModel.objects.filter(aml_risk=True).count()+ECommercePassedModel.objects.filter(aml_risk=True).count()+ECommerceRePassedModel.objects.filter(aml_risk=True).count()
-        credit_card_fail = CreditCardFailedModel.objects.filter(aml_risk=True).count()+CreditCardPassedModel.objects.filter(aml_risk=True).count()+CreditRePassedModel.objects.filter(aml_risk=True).count()
+        banking_fail = FailedCustomerData.objects.filter(user = user,aml_risk=True).count()+PassedCustomerData.objects.filter(user = user,aml_risk=True).count()+RePassedCustomerData.objects.filter(user = user,aml_risk=True).count()
+        ecommerce_fail = ECommerceFailedModel.objects.filter(user = user,aml_risk=True).count()+ECommercePassedModel.objects.filter(user = user,aml_risk=True).count()+ECommerceRePassedModel.objects.filter(user = user,aml_risk=True).count()
+        credit_card_fail = CreditCardFailedModel.objects.filter(user = user,aml_risk=True).count()+CreditCardPassedModel.objects.filter(user = user,aml_risk=True).count()+CreditRePassedModel.objects.filter(user = user,aml_risk=True).count()
         
         result = {'banking_fail':banking_fail,'ecommerce_fail':ecommerce_fail,'credit_card_fail':credit_card_fail}
         
@@ -627,12 +648,13 @@ class PFCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
-        banking_fail = FailedCustomerData.objects.count()
-        banking_pass = PassedCustomerData.objects.count()
-        ecommerce_fail = ECommerceFailedModel.objects.count()
-        ecommerce_pass = ECommercePassedModel.objects.count()
-        credit_card_fail = CreditCardFailedModel.objects.count()
-        credit_card_pass = CreditCardPassedModel.objects.count()
+        user = request.user
+        banking_fail = FailedCustomerData.objects.filter(user=user).count()
+        banking_pass = PassedCustomerData.objects.filter(user=user).count()
+        ecommerce_fail = ECommerceFailedModel.objects.filter(user=user).count()
+        ecommerce_pass = ECommercePassedModel.objects.filter(user=user).count()
+        credit_card_fail = CreditCardFailedModel.objects.filter(user=user).count()
+        credit_card_pass = CreditCardPassedModel.objects.filter(user=user).count()
 
         banking = {
             'fail': banking_fail,
@@ -657,12 +679,13 @@ class AMLPFCountView(APIView):
     permission_classes = [permissions.IsAuthenticated, JWTTokenPermission]
 
     def get(self,request):
-        banking_fail = FailedCustomerData.objects.filter(aml_risk=True).count()
-        banking_pass = PassedCustomerData.objects.filter(aml_risk=True).count()
-        ecommerce_fail = ECommerceFailedModel.objects.filter(aml_risk=True).count()
-        ecommerce_pass = ECommercePassedModel.objects.filter(aml_risk=True).count()
-        credit_card_fail = CreditCardFailedModel.objects.filter(aml_risk=True).count()
-        credit_card_pass = CreditCardPassedModel.objects.filter(aml_risk=True).count()
+        user = request.user
+        banking_fail = FailedCustomerData.objects.filter(user = user,aml_risk=True).count()
+        banking_pass = PassedCustomerData.objects.filter(user = user,aml_risk=True).count()
+        ecommerce_fail = ECommerceFailedModel.objects.filter(user = user,aml_risk=True).count()
+        ecommerce_pass = ECommercePassedModel.objects.filter(user = user,aml_risk=True).count()
+        credit_card_fail = CreditCardFailedModel.objects.filter(user = user,aml_risk=True).count()
+        credit_card_pass = CreditCardPassedModel.objects.filter(user = user,aml_risk=True).count()
 
         banking = {
             'fail': banking_fail,
