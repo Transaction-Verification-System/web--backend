@@ -792,7 +792,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             else:
                 response = ISocketResponse(
                     verified=result == 0,
-                    message=f'AI check in Banking Transaction' if result == 0 else f'AI check failed due to Banking Fraud Detection Model.',
+                    message=f'AI check in Banking Transaction succeded' if result == 0 else f'AI check failed due to Banking Fraud Detection Model.',
                     current_transaction_id="txn"+str(transaction_count), 
                     next_transaction_id='None' if is_last_transaction else "txn"+str(transaction_count+1), 
                     total_transactions_checked = index,  
@@ -823,7 +823,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             elif task_name == 'black_list':
                 response = ISocketResponse(
                     verified=result == 0,
-                    message=f'Black List check succeeded in Credit Card' if result == 0 else f'Black List check failed because the user has been blacklisted.',
+                    message=f'Black List check succeeded in Credit Card Transaction' if result == 0 else f'Black List check failed because the user has been blacklisted.',
                     current_transaction_id="txn"+str(transaction_count), 
                     next_transaction_id='None' if is_last_transaction else "txn"+str(transaction_count+1), 
                     total_transactions_checked = index,  
@@ -837,7 +837,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             else:
                 response = ISocketResponse(
                     verified=result == 0,
-                    message=f'AI check in Credit Card in Ecommerce' if result == 0 else f'AI check failed due to Credit Card Fraud Detection Model.',
+                    message=f'AI check in Credit Card Detection succeded' if result == 0 else f'AI check failed due to Credit Card Fraud Detection Model.',
                     current_transaction_id="txn"+str(transaction_count), 
                     next_transaction_id='None' if is_last_transaction else "txn"+str(transaction_count+1), 
                     total_transactions_checked = index,  
@@ -854,7 +854,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             if task_name == 'rules_engine':
                 response = ISocketResponse(
                     verified=result == 0,
-                    message = f'Rules Engine check succeeded in Ecommerce' if result == 0 else f'Rules Engine check failed due to Ecommerce Weight Calculation Rules.',
+                    message = f'Rules Engine check succeeded in Ecommerce Fraud Detection' if result == 0 else f'Rules Engine check failed due to Ecommerce Weight Calculation Rules.',
                     current_transaction_id = "txn"+str(transaction_count), 
                     next_transaction_id = 'None' if is_last_transaction else "txn"+str(transaction_count+1), 
                     total_transactions_checked = index,  
@@ -868,7 +868,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             elif task_name == 'black_list':
                 response = ISocketResponse(
                     verified=result == 0,
-                    message=f'Black List check succeeded in Ecommerce' if result == 0 else f'Black List check failed because the user has been blacklisted.',
+                    message=f'Black List check succeeded in Ecommerce Transaction' if result == 0 else f'Black List check failed because the user has been blacklisted.',
                     current_transaction_id="txn"+str(transaction_count), 
                     next_transaction_id='None' if is_last_transaction else "txn"+str(transaction_count+1), 
                     total_transactions_checked = index,  
@@ -882,7 +882,7 @@ def send_message_channel(result,task_name,transaction_count,accepted_data,data_l
             else:
                 response = ISocketResponse(
                     verified=result == 0,
-                    message=f'AI check passed in Ecommerce' if result == 0 else f'AI check failed due to Ecommerce Fraud Detection Model.',
+                    message=f'AI check passed in Ecommerce Transaction Detection' if result == 0 else f'AI check failed due to Ecommerce Fraud Detection Model.',
                     current_transaction_id="txn"+str(transaction_count), 
                     next_transaction_id='None' if is_last_transaction else "txn"+str(transaction_count+1), 
                     total_transactions_checked = index,  
