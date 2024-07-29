@@ -25,9 +25,9 @@ This repository contains the backend code for the TVIS project. It is built usin
  DATABASES = {
      'default': {
          'ENGINE': 'django.db.backends.postgresql',
-         'NAME': 'tvis',
+         'NAME': 'postgres',
          'USER':'postgres',
-         'PASSWORD':'admin@123',
+         'PASSWORD':'postgres',
          'HOST':'localhost',
          'PORT':'5432'
      }
